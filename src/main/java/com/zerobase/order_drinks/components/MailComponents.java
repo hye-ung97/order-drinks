@@ -14,14 +14,6 @@ import javax.mail.internet.MimeMessage;
 public class MailComponents {
 
     private final JavaMailSender javaMailSender;
-    public void sendMailTest(){
-        SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setTo("hysung714@naver.com");
-        msg.setSubject("test");
-        msg.setText("hello");
-
-        javaMailSender.send(msg);
-    }
 
     public boolean sendMail(String mail, String subject, String text){
 
