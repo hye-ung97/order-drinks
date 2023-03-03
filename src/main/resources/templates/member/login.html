@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+<h1>Login</h1>
+
+<div th:text="${errorMessage}"></div>
+
+<form method="post">
+    <div>
+        <span> 이메일 : </span>
+        <input type="email" name="username" placeholder="email@google.com" required/>
+    </div>
+
+    <div>
+        <span> 비밀번호 : </span>
+        <input type="password" name="password" placeholder="password" required/>
+    </div>
+
+    <div>
+        <button type="submit"> LOGIN </button>
+    </div>
+
+</form>
+
+</body>
+</html>

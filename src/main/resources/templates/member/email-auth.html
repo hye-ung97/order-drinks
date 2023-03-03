@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>email auth</title>
+</head>
+<body>
+
+    <div th:if="${result}">
+        <h1> 계정 활성화에 성공하였습니다. </h1>
+        <hr>
+    </div>
+
+    <div th:if="${result eq false}">
+        <h1> 계정 활성화에 실패하였습니다.</h1>
+        <hr>
+    </div>
+
+</body>
+</html>
