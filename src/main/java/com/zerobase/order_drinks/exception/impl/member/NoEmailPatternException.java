@@ -1,9 +1,9 @@
-package com.zerobase.order_drinks.exception.impl;
+package com.zerobase.order_drinks.exception.impl.member;
 
 import com.zerobase.order_drinks.exception.AbstractException;
 import org.springframework.http.HttpStatus;
 
-public class PasswordNotMatchException extends AbstractException {
+public class NoEmailPatternException extends AbstractException {
     @Override
     public int getStatusCode() {
         return HttpStatus.BAD_REQUEST.value();
@@ -11,6 +11,6 @@ public class PasswordNotMatchException extends AbstractException {
 
     @Override
     public String getMessage() {
-        return "비밀번호가 일치하지 않습니다.";
+        return "이메일 형식이 아닙니다.";
     }
 }

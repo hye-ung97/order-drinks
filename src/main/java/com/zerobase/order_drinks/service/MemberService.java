@@ -1,10 +1,7 @@
 package com.zerobase.order_drinks.service;
 
 import com.zerobase.order_drinks.components.MailComponent;
-import com.zerobase.order_drinks.exception.impl.AlreadyExistUserException;
-import com.zerobase.order_drinks.exception.impl.NoEmailAuthException;
-import com.zerobase.order_drinks.exception.impl.NoUserException;
-import com.zerobase.order_drinks.exception.impl.PasswordNotMatchException;
+import com.zerobase.order_drinks.exception.impl.member.*;
 import com.zerobase.order_drinks.model.Auth;
 import com.zerobase.order_drinks.model.MemberEntity;
 import com.zerobase.order_drinks.repository.MemberRepository;
@@ -16,10 +13,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.Option;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -42,6 +40,11 @@ public class MemberService implements UserDetailsService {
             throw new AlreadyExistUserException();
         }
 
+        boolean validEmail = isValidEmail(member.getUsername());
+        if(!validEmail){
+            throw new NoEmailPatternException();
+        }
+
         member.setPassword(this.passwordEncoder.encode(member.getPassword()));
 
         String uuid = UUID.randomUUID().toString();
@@ -56,6 +59,17 @@ public class MemberService implements UserDetailsService {
         mailComponent.sendMail(email, subject, text);
 
         return result;
+    }
+
+    public static boolean isValidEmail(String email) {
+        boolean err = false;
+        String regex = "^[_a-z0-9-]+(.[_a-z0-9-]+)*@(?:\\w+\\.)+\\w+$";
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(email);
+        if(m.matches()) {
+            err = true;
+        }
+        return err;
     }
 
     public MemberEntity authenticate(Auth.SignIn member){

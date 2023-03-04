@@ -7,10 +7,7 @@ import com.zerobase.order_drinks.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
 
 @Slf4j
 @RestController
@@ -23,6 +20,7 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody Auth.SignUp request){
         var result = this.memberService.register(request);
+        log.info("user register -> " + request.getUsername());
 
         return ResponseEntity.ok(request);
     }
