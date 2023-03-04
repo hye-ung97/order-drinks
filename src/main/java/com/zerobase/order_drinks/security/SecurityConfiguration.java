@@ -36,9 +36,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(final WebSecurity web) throws Exception{
-        web.ignoring()
-                .antMatchers("/h2-console/**");
+
     }
+
+
 
     @Bean
     @Override
