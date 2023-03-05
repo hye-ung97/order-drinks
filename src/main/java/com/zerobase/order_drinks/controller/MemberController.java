@@ -1,6 +1,7 @@
 package com.zerobase.order_drinks.controller;
 
 import com.zerobase.order_drinks.model.MenuEntity;
+import com.zerobase.order_drinks.model.StoreData;
 import com.zerobase.order_drinks.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.mail.Store;
 
 @Slf4j
 @RestController
@@ -27,8 +30,9 @@ public class MemberController {
     }
 
     @GetMapping("/find-store")
-    public void findLocation(@RequestParam("address") String address){
-        orderService.getLocationData(address);
+    public ResponseEntity<?> findLocation(@RequestParam("address") String address){
+        StoreData storeData = orderService.getLocationData(address);
+        return ResponseEntity.ok(storeData);
     }
 
 

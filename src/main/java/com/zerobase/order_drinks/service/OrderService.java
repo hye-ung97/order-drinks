@@ -1,6 +1,7 @@
 package com.zerobase.order_drinks.service;
 
 import com.zerobase.order_drinks.model.MenuEntity;
+import com.zerobase.order_drinks.model.StoreData;
 import com.zerobase.order_drinks.repository.ListOrderRepository;
 import com.zerobase.order_drinks.repository.MenuRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,15 +38,20 @@ public class OrderService {
         return this.menuRepository.findAll(pageable);
     }
 
-    public void getLocationData(String address){
-        String name = getLocationFromApi(address);
-        System.out.println(name);
+    public StoreData getLocationData(String address){
+        address = address.trim();
+        Map<String, String> data = getLocationFromApi(address);
+        StoreData storeData = new StoreData();
+        storeData.setAddress(data.get("address"));
+        storeData.setStoreName(data.get("name"));
+
+        return storeData;
     }
 
-    public String getLocationFromApi(String address){
+    public Map<String, String> getLocationFromApi(String address){
 
         String locationUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json" +
-                "?query=" + address + "&key="+secretKey + "&localization?language=ko";
+                "?query=" + address + "&key="+secretKey;
 
         String getLocationData = getLocationString(locationUrl);
         Map<String, String> parsedLocation = parseLocation(getLocationData);
@@ -54,13 +60,12 @@ public class OrderService {
                 "?location=" + parsedLocation.get("lat") + "%" + parsedLocation.get("lng") +
                 "&query=스타벅스" +
                 "&radius=1000" +
-                "&key=" + secretKey + "&localization?language=ko";
+                "&key=" + secretKey + "&language=ko";
 
         String paredStoreData = getLocationString(storeUrl);
         Map<String, String> storeData = parseLocation(paredStoreData);
-        String storeName = storeData.get("name");
 
-        return storeName;
+        return storeData;
     }
 
     public Map<String, String> parseLocation(String jsonString){
@@ -77,11 +82,13 @@ public class OrderService {
         JSONArray results = (JSONArray) jsonObject.get("results");
         JSONObject resultObj = (JSONObject) results.get(0);
         JSONObject geo = (JSONObject) resultObj.get("geometry");
-        String name = (String) resultObj.get("formatted_address");
+        String formattedAddress = (String) resultObj.get("formatted_address");
+        String name = (String) resultObj.get("name");
         JSONObject location = (JSONObject) geo.get("location");
 
         resultMap.put("lat", String.valueOf(location.get("lat")));
         resultMap.put("lng", String.valueOf(location.get("lng")));
+        resultMap.put("address", formattedAddress);
         resultMap.put("name", name);
 
         return resultMap;
