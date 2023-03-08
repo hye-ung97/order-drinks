@@ -25,6 +25,12 @@ dependencies {
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+    implementation group: 'org.jsoup', name: 'jsoup', version: '1.7.2'
+    implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.3'
+    implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+
+
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'mysql:mysql-connector-java'
     annotationProcessor 'org.projectlombok:lombok'
