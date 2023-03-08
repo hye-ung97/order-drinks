@@ -1,5 +1,6 @@
 package com.zerobase.order_drinks.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.zerobase.order_drinks.components.GoogleMapApi;
 import com.zerobase.order_drinks.exception.impl.NoMenuException;
 import com.zerobase.order_drinks.model.constants.Pay;
@@ -10,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -24,8 +25,8 @@ public class OrderService {
     private final PointRepository pointRepository;
 
 
-    public ArrayList<StoreData> getLocationData(String address){
-        return this.googleMapApi.getLocationData(address);
+    public List<StoreData> getLocationData(String address) throws JsonProcessingException {
+        return this.googleMapApi.findStoreFromApi(address);
     }
 
     public void orderReceipt(Order order){

@@ -1,181 +1,133 @@
 package com.zerobase.order_drinks.components;
 
-import com.zerobase.order_drinks.exception.impl.ParseFailException;
-import com.zerobase.order_drinks.model.MapData;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zerobase.order_drinks.model.dto.MapDataObject;
 import com.zerobase.order_drinks.model.dto.StoreData;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.PriorityQueue;
 
-@Component
+@Slf4j
+@Service
+@RequiredArgsConstructor
 public class GoogleMapApi {
+    private final RestTemplate restTemplate;
 
     @Value("${spring.googleMap.key}")
     private String secretKey;
 
-    public ArrayList<StoreData> getLocationData(String address){
-        address = address.trim().replace(" ", "%20");
-        ArrayList<MapData> mapData = getLocationFromApi(address);
+    private String baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
 
-        ArrayList<StoreData> storeDataArrayList = new ArrayList<>();
+    public List<StoreData> findStoreFromApi(String address) throws JsonProcessingException {
+        String currentLocationString = currentLocation(address);
+        MapDataObject.address addressData = apiParse(currentLocationString);
 
-        for(MapData data : mapData){
+        MapDataObject.addressInfo addressInfo = addressData.getResults().get(0);
+        var result = storeLocation(addressInfo);
+
+        return result;
+    }
+
+    public String currentLocation(String address){
+        address = address.replace(" ", "+").trim();
+
+        UriComponents builder = UriComponentsBuilder.fromHttpUrl(baseUrl)
+                .queryParam("query", address)
+                .queryParam("key", secretKey)
+                .queryParam("language", "ko").encode().build();
+
+        return apitoString(builder);
+    }
+
+    public List<StoreData> storeLocation(MapDataObject.addressInfo current) throws JsonProcessingException {
+        double lat = current.getGeometry().getLocation().getLat();
+        double lng = current.getGeometry().getLocation().getLng();
+
+        UriComponents builder = UriComponentsBuilder.fromHttpUrl(baseUrl)
+                .queryParam("location", lat + "%" + lng)
+                .queryParam("query", "스타벅스")
+                .queryParam("radius", "1000")
+                .queryParam("key", secretKey)
+                .queryParam("language", "ko").build();
+
+        String jsonString = apitoString(builder);
+        MapDataObject.address addressData = apiParse(jsonString);
+        List<MapDataObject.addressInfo> addressList = addressData.getResults();
+
+        PriorityQueue<StoreData> pq = new PriorityQueue<>(new Comparator<StoreData>() {
+            @Override
+            public int compare(StoreData o1, StoreData o2) {
+                double a = Double.valueOf(o1.getDistance().replace(" km",""));
+                double b = Double.valueOf(o2.getDistance().replace(" km",""));
+
+                if(a <= b){
+                    return -1;
+                }
+                else{
+                    return 1;
+                }
+            }
+        });
+
+        for(MapDataObject.addressInfo data : addressList){
+            double storeLat = data.getGeometry().getLocation().getLat();
+            double storeLng = data.getGeometry().getLocation().getLng();
+            double dist = distance(lat, lng, storeLat, storeLng);
+
             StoreData storeData = new StoreData();
-            storeData.setAddress(data.getAddress());
-            storeData.setStoreName(data.storeName);
-            storeDataArrayList.add(storeData);
+            storeData.setStoreName(data.getName());
+            storeData.setAddress(data.getFormatted_address());
+            storeData.setDistance(String.format("%.3f km", dist));
+            pq.add(storeData);
         }
 
-        return storeDataArrayList;
+        List<StoreData> result = new ArrayList<>();
+        result.add(pq.poll());
+        result.add(pq.poll());
+
+        return result;
     }
 
-    public ArrayList<MapData> getLocationFromApi(String address){
-
-        String locationUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json" +
-                "?query=" + address + "&key="+secretKey + "&language=ko";
-
-        String getLocationData = getLocationString(locationUrl);
-        ArrayList<MapData> addressData = parseLocation(getLocationData);
-
-
-        String storeUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json" +
-                "?location=" + addressData.get(0).lat + "%" + addressData.get(0).lng +
-                "&query=스타벅스" +
-                "&radius=1000" +
-                "&key=" + secretKey + "&language=ko";
-
-        String paredStoreData = getLocationString(storeUrl);
-        ArrayList<MapData> apiData = parseLocation(paredStoreData);
-
-        return calculate(apiData, addressData);
+    public String apitoString(UriComponents builder) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        ResponseEntity<String> response = restTemplate.exchange(builder.toUri(), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        return response.getBody();
     }
 
-    public ArrayList<MapData> parseLocation(String jsonString){
-        JSONParser jsonParser = new JSONParser();
-        JSONObject jsonObject;
-
-        try {
-            jsonObject = (JSONObject) jsonParser.parse(jsonString);
-        } catch (ParseException e){
-            throw new RuntimeException(e);
-        }
-
-        JSONArray results = (JSONArray) jsonObject.get("results");
-
-        ArrayList<MapData> list = new ArrayList<>();
-
-        for (Object object : results){
-            JSONObject jsonObject1 = (JSONObject) object;
-            String formattedAddress = (String) jsonObject1.get("formatted_address");
-            String name = (String) jsonObject1.get("name");
-            JSONObject geo = (JSONObject) jsonObject1.get("geometry");
-            JSONObject location = (JSONObject) geo.get("location");
-            String lat = String.valueOf(location.get("lat"));
-            String lng = String.valueOf(location.get("lng"));
-
-            MapData mapData = new MapData();
-            mapData.setAddress(formattedAddress);
-            mapData.setLat(lat);
-            mapData.setLng(lng);
-            mapData.setStoreName(name);
-
-            list.add(mapData);
-        }
-
-        return list;
+    public MapDataObject.address apiParse(String jsonString) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(jsonString, MapDataObject.address.class);
     }
 
-    public String getLocationString(String apiUrl){
+    // 좌표간의 거리 계산
+    private static double distance(double lat1, double lon1, double lat2, double lon2) {
+        double theta = lon1 - lon2;
+        double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
 
-        try {
-            URL url = new URL(apiUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            int responseCode = connection.getResponseCode();
-            BufferedReader br;
+        dist = Math.acos(dist);
+        dist = rad2deg(dist);
+        dist = dist * 60 * 1.1515 * 1609.344;
 
-            if(responseCode == 200){
-                br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            } else{
-                br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-            }
-
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = br.readLine()) != null){
-                response.append(inputLine);
-            }
-            br.close();
-
-            return response.toString();
-        }catch (Exception e){
-            throw new ParseFailException();
-        }
+        return dist / 1000;
     }
 
-
-    public ArrayList<MapData> calculate (ArrayList<MapData> apiData, ArrayList<MapData> addressData){
-        PriorityQueue<MapData> pq = new PriorityQueue<>((x, y) -> (int) (x.distance - y.distance));
-
-        MapData origin_addresses = addressData.get(0);
-
-        for (MapData mapData : apiData){
-            String distance = parseDistance(origin_addresses, mapData);
-            if(distance == null)    continue;;
-
-            distance = distance.replace(" km","");
-            mapData.setDistance(Double.valueOf(distance));
-            pq.add(mapData);
-        }
-
-        ArrayList<MapData> resultList = new ArrayList<>();
-        resultList.add(pq.poll());
-        resultList.add(pq.poll());
-
-        return resultList;
+    private static double deg2rad(double deg) {
+        return (deg * Math.PI / 180.0);
     }
 
-    public String parseDistance (MapData origin, MapData destination){
-
-        String address1 = origin.address.trim().replace(" ", "%20");
-        String address2 = destination.address.trim().replace(" ", "%20");
-
-        String url = "https://maps.googleapis.com/maps/api/distancematrix/json" +
-                "?units=metric&mode=transit&destinations=" + address2 +
-                "&origins=" + address1 +
-                "&key=" + secretKey;
-
-        String parseString = getLocationString(url);
-
-        JSONParser jsonParser = new JSONParser();
-        JSONObject jsonObject;
-
-        try {
-            jsonObject = (JSONObject) jsonParser.parse(parseString);
-        } catch (ParseException e){
-            throw new RuntimeException(e);
-        }
-
-        JSONArray jsonArray = (JSONArray) jsonObject.get("rows");
-        JSONObject elementsObj = (JSONObject) jsonArray.get(0);
-        JSONArray elementsArr = (JSONArray) elementsObj.get("elements");
-        JSONObject distanceArr = (JSONObject) elementsArr.get(0);
-        JSONObject distObj = (JSONObject) distanceArr.get("distance");
-        String status = (String) distanceArr.get("status");
-
-        if(status.equals("OK")){
-            return (String) distObj.get("text");
-        }
-        return null;
+    private static double rad2deg(double rad) {
+        return (rad * 180 / Math.PI);
     }
 }

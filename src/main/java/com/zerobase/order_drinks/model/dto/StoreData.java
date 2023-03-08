@@ -6,5 +6,5 @@ import lombok.Data;
 public class StoreData {
     private String storeName;
     private String address;
-
+    private String distance;
 }
