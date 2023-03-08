@@ -1,14 +1,12 @@
-package com.zerobase.order_drinks.model;
+package com.zerobase.order_drinks.model.entity;
 
+import com.zerobase.order_drinks.model.constants.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
@@ -29,7 +27,6 @@ public class ListOrderEntity {
 
     private String menu;
 
-    private String orderStatus;
-
-
+    @Enumerated(EnumType.STRING)
+    private OrderStatus orderStatus;
 }

@@ -1,4 +1,4 @@
-package com.zerobase.order_drinks.model;
+package com.zerobase.order_drinks.model.dto;
 
 import lombok.Data;
 

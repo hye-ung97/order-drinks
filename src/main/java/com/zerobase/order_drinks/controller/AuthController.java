@@ -1,7 +1,7 @@
 package com.zerobase.order_drinks.controller;
 
 
-import com.zerobase.order_drinks.model.Auth;
+import com.zerobase.order_drinks.model.dto.Auth;
 import com.zerobase.order_drinks.security.TokenProvider;
 import com.zerobase.order_drinks.service.MemberService;
 import lombok.RequiredArgsConstructor;
