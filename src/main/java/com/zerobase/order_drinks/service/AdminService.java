@@ -1,5 +1,6 @@
 package com.zerobase.order_drinks.service;
 
+import com.zerobase.order_drinks.model.entity.ListOrderEntity;
 import com.zerobase.order_drinks.model.entity.MemberEntity;
 import com.zerobase.order_drinks.repository.MemberRepository;
 import lombok.AllArgsConstructor;
@@ -16,8 +17,12 @@ public class AdminService {
 
     private final MemberRepository memberRepository;
 
-
     public Page<MemberEntity> getMemberList(Pageable pageable) {
         return this.memberRepository.findAll(pageable);
+    }
+
+    //주문 리스트 가져오기
+    public Page<ListOrderEntity> getOrderList(Pageable pageable){
+        return null;
     }
 }

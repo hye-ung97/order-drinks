@@ -64,11 +64,11 @@ public class MemberService implements UserDetailsService {
         cardRepository.save(card);
 
         WalletEntity.Coupon coupon = new WalletEntity.Coupon();
+        coupon.setCount(1);
         coupon.setUpdatedDate(LocalDateTime.now());
         couponRepository.save(coupon);
 
         WalletEntity.Point point = new WalletEntity.Point();
-        point.setCount(1);
         point.setUpdatedDate(LocalDateTime.now());
         pointRepository.save(point);
 
@@ -135,5 +135,28 @@ public class MemberService implements UserDetailsService {
         result.put("result", "withdraw success!");
 
         return result;
+    }
+
+    public WalletEntity.Card cardCharge(int price, String userName){
+        var user = this.memberRepository.findByUsername(userName)
+                .orElseThrow(() -> new NoUserException());
+
+        int chargedPrice = user.getCard().getPrice() + price;
+        user.getCard().setPrice(chargedPrice);
+        user.getCard().setChargedDate(LocalDateTime.now());
+
+        memberRepository.save(user);
+
+        return user.getCard();
+    }
+
+    public WalletEntity getWallet(String userName){
+        var user = this.memberRepository.findByUsername(userName)
+                .orElseThrow(() -> new NoUserException());
+
+        WalletEntity wallet = new WalletEntity();
+        wallet.getWallet(user.getCard(), user.getCoupon(), user.getPoint());
+
+        return wallet;
     }
 }

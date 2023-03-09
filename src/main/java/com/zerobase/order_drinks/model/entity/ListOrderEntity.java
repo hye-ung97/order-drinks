@@ -27,6 +27,10 @@ public class ListOrderEntity {
 
     private String menu;
 
+    private int price;
+
+    private String store;
+
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 }

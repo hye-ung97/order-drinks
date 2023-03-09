@@ -37,11 +37,8 @@ public class AuthController {
 
     @GetMapping("/email-auth")
     public ResponseEntity<?> emailAuth(@RequestParam("id") String uuid){
-        //String uuid = param;
         var member = memberService.emailAuth(uuid);
-
         log.info("user email Auth ok");
-
         return ResponseEntity.ok(member);
     }
 }

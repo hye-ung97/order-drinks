@@ -1,11 +1,21 @@
 package com.zerobase.order_drinks.model.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
 public class WalletEntity {
+
+    private WalletEntity.Card card;
+    private WalletEntity.Point point;
+    private WalletEntity.Coupon coupon;
 
     @Entity
     @Data
@@ -43,5 +53,11 @@ public class WalletEntity {
 
         private int count;
         private LocalDateTime updatedDate;
+    }
+
+    public void getWallet(Card card, Coupon coupon, Point point){
+        this.card = card;
+        this.coupon = coupon;
+        this.point = point;
     }
 }

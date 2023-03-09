@@ -1,7 +1,8 @@
-package com.zerobase.order_drinks.components;
+package com.zerobase.order_drinks.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zerobase.order_drinks.exception.impl.ParseFailException;
 import com.zerobase.order_drinks.model.dto.MapDataObject;
 import com.zerobase.order_drinks.model.dto.StoreData;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ import java.util.PriorityQueue;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GoogleMapApi {
+public class GoogleMapService {
     private final RestTemplate restTemplate;
 
     @Value("${spring.googleMap.key}")
@@ -29,14 +30,14 @@ public class GoogleMapApi {
 
     private String baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
 
-    public List<StoreData> findStoreFromApi(String address) throws JsonProcessingException {
+    public List<StoreData> findStoreFromApi(String address) {
         String currentLocationString = currentLocation(address);
-        MapDataObject.address addressData = apiParse(currentLocationString);
+        MapDataObject.address addressData = null;
 
+        addressData = apiParse(currentLocationString);
         MapDataObject.addressInfo addressInfo = addressData.getResults().get(0);
-        var result = storeLocation(addressInfo);
+        return storeLocation(addressInfo);
 
-        return result;
     }
 
     public String currentLocation(String address){
@@ -50,7 +51,7 @@ public class GoogleMapApi {
         return apitoString(builder);
     }
 
-    public List<StoreData> storeLocation(MapDataObject.addressInfo current) throws JsonProcessingException {
+    public List<StoreData> storeLocation(MapDataObject.addressInfo current) {
         double lat = current.getGeometry().getLocation().getLat();
         double lng = current.getGeometry().getLocation().getLng();
 
@@ -62,7 +63,10 @@ public class GoogleMapApi {
                 .queryParam("language", "ko").build();
 
         String jsonString = apitoString(builder);
-        MapDataObject.address addressData = apiParse(jsonString);
+        MapDataObject.address addressData = null;
+
+        addressData = apiParse(jsonString);
+
         List<MapDataObject.addressInfo> addressList = addressData.getResults();
 
         PriorityQueue<StoreData> pq = new PriorityQueue<>(new Comparator<StoreData>() {
@@ -106,9 +110,13 @@ public class GoogleMapApi {
         return response.getBody();
     }
 
-    public MapDataObject.address apiParse(String jsonString) throws JsonProcessingException {
+    public MapDataObject.address apiParse(String jsonString) {
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(jsonString, MapDataObject.address.class);
+        try {
+            return mapper.readValue(jsonString, MapDataObject.address.class);
+        } catch (JsonProcessingException e) {
+            throw new ParseFailException();
+        }
     }
 
     // 좌표간의 거리 계산
