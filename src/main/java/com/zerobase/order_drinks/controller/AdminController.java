@@ -27,25 +27,4 @@ public class AdminController {
         return ResponseEntity.ok(members);
     }
 
-    @GetMapping("/order/list-making") //제작중인 음료 리스트 보기
-    public ResponseEntity<?> orderStatus(){
-        return null;
-    }
-
-    @GetMapping("/order/list-change") //음료 상태 변경
-    public ResponseEntity<?> orderStatusChange(){
-        return null;
-    }
-
-    @GetMapping("/order/list-all") //기간별 주문 리스트 보기 // 합계?
-    public ResponseEntity<?> orderList(){
-        return null;
-    }
-
-    @GetMapping("/order/list-store") //지점 주문 리스트 보기 // 합계?
-    public ResponseEntity<?> orderStoreList(){
-        return null;
-    }
-
-
 }

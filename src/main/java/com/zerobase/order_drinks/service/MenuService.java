@@ -1,6 +1,6 @@
 package com.zerobase.order_drinks.service;
 
-import com.zerobase.order_drinks.exception.impl.AlreadyExistMenuException;
+import com.zerobase.order_drinks.exception.impl.menu.AlreadyExistMenuException;
 import com.zerobase.order_drinks.model.dto.Menu;
 import com.zerobase.order_drinks.model.entity.MenuEntity;
 import com.zerobase.order_drinks.repository.MenuRepository;

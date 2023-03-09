@@ -1,4 +1,4 @@
-package com.zerobase.order_drinks.exception.impl;
+package com.zerobase.order_drinks.exception.impl.menu;
 
 import com.zerobase.order_drinks.exception.AbstractException;
 import org.springframework.http.HttpStatus;

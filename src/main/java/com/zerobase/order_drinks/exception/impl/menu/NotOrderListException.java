@@ -1,9 +1,9 @@
-package com.zerobase.order_drinks.exception.impl;
+package com.zerobase.order_drinks.exception.impl.menu;
 
 import com.zerobase.order_drinks.exception.AbstractException;
 import org.springframework.http.HttpStatus;
 
-public class NoMenuException extends AbstractException {
+public class NotOrderListException extends AbstractException {
     @Override
     public int getStatusCode() {
         return HttpStatus.BAD_REQUEST.value();
@@ -11,6 +11,6 @@ public class NoMenuException extends AbstractException {
 
     @Override
     public String getMessage() {
-        return "존재하지 않는 음료입니다.";
+        return "요청하신 상태의 주문 리스트는 없습니다.";
     }
 }

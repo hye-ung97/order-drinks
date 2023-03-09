@@ -1,8 +1,6 @@
 package com.zerobase.order_drinks.controller;
 
-import antlr.Token;
 import com.zerobase.order_drinks.model.dto.Menu;
-import com.zerobase.order_drinks.security.TokenProvider;
 import com.zerobase.order_drinks.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 public class MenuController {
 
     private final MenuService menuService;
-    private final TokenProvider tokenProvider;
 
     @PostMapping("/register")
     @PreAuthorize("hasRole('ADMIN')")
