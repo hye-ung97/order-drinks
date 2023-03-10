@@ -1,7 +1,7 @@
 package com.zerobase.order_drinks.controller;
 
 
-import com.zerobase.order_drinks.model.Auth;
+import com.zerobase.order_drinks.model.dto.Auth;
 import com.zerobase.order_drinks.security.TokenProvider;
 import com.zerobase.order_drinks.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -37,11 +37,8 @@ public class AuthController {
 
     @GetMapping("/email-auth")
     public ResponseEntity<?> emailAuth(@RequestParam("id") String uuid){
-        //String uuid = param;
         var member = memberService.emailAuth(uuid);
-
         log.info("user email Auth ok");
-
         return ResponseEntity.ok(member);
     }
 }

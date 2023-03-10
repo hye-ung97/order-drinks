@@ -1,19 +1,12 @@
 package com.zerobase.order_drinks.controller;
 
-import com.zerobase.order_drinks.model.MenuEntity;
-import com.zerobase.order_drinks.model.StoreData;
-import com.zerobase.order_drinks.service.OrderService;
+import com.zerobase.order_drinks.model.dto.Auth;
+import com.zerobase.order_drinks.security.TokenProvider;
+import com.zerobase.order_drinks.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import javax.mail.Store;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -21,23 +14,28 @@ import javax.mail.Store;
 @RequiredArgsConstructor
 public class MemberController {
 
-    private final OrderService orderService;
+    private final MemberService memberService;
+    private final TokenProvider tokenProvider;
 
-    @GetMapping("/menu/list")
-    public ResponseEntity<?> menuList(final Pageable pageable){
-        Page<MenuEntity> menuList = this.orderService.menuList(pageable);
-        return ResponseEntity.ok(menuList);
+    @GetMapping("/withdraw")
+    public ResponseEntity<?> withdraw(@RequestBody Auth.SignIn signIn){
+        return ResponseEntity.ok(memberService.withdraw(signIn));
     }
 
-    @GetMapping("/find-store")
-    public ResponseEntity<?> findLocation(@RequestParam("address") String address){
-        StoreData storeData = orderService.getLocationData(address);
-        return ResponseEntity.ok(storeData);
+    @GetMapping("/wallet")
+    public ResponseEntity<?> getWallet(@RequestHeader("Authorization") String token){
+        String userName = this.tokenProvider.getUsername(token.replace("Bearer ", ""));
+        var result = memberService.getWallet(userName);
+
+        return ResponseEntity.ok(result);
     }
 
-
-
-
-
+    @GetMapping("/charge")
+    public ResponseEntity<?> charge(@RequestParam("price") int price, @RequestHeader("Authorization") String token){
+        String userName = this.tokenProvider.getUsername(token.replace("Bearer ", ""));
+        var result = memberService.cardCharge(price, userName);
+        log.info("token : " + userName);
+        return ResponseEntity.ok(result);
+    }
 
 }

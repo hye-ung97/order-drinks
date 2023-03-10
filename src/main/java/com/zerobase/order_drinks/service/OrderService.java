@@ -1,124 +1,92 @@
 package com.zerobase.order_drinks.service;
 
-import com.zerobase.order_drinks.model.MenuEntity;
-import com.zerobase.order_drinks.model.StoreData;
-import com.zerobase.order_drinks.repository.ListOrderRepository;
-import com.zerobase.order_drinks.repository.MenuRepository;
+
+import com.zerobase.order_drinks.exception.impl.member.LowCardPriceException;
+import com.zerobase.order_drinks.exception.impl.member.NoUserException;
+import com.zerobase.order_drinks.exception.impl.member.NotUserCouponException;
+import com.zerobase.order_drinks.exception.impl.menu.NoMenuException;
+import com.zerobase.order_drinks.exception.impl.menu.NotOrderListException;
+import com.zerobase.order_drinks.model.constants.OrderStatus;
+import com.zerobase.order_drinks.model.constants.Pay;
+import com.zerobase.order_drinks.model.dto.Order;
+import com.zerobase.order_drinks.model.entity.ListOrderEntity;
+import com.zerobase.order_drinks.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.type.StringNVarcharType;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDate;
+import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
     private final MenuRepository menuRepository;
+    private final MemberRepository memberRepository;
     private final ListOrderRepository listOrderRepository;
+    private final int pointToCoupon = 12;
 
+    public ListOrderEntity orderReceipt(Order order, String userName){
+        var menu = menuRepository.findByMenuName(order.getItem())
+                .orElseThrow(() -> new NoMenuException());
+        int price = menu.getPrice();
 
-    @Value("${spring.googleMap.key}")
-    private String secretKey;
+        var user = memberRepository.findByUsername(userName).orElseThrow(() -> new NoUserException());
 
-    public Page<MenuEntity> menuList(Pageable pageable) {
-        return this.menuRepository.findAll(pageable);
-    }
+        Pay payMethod = order.getPay();
 
-    public StoreData getLocationData(String address){
-        address = address.trim();
-        Map<String, String> data = getLocationFromApi(address);
-        StoreData storeData = new StoreData();
-        storeData.setAddress(data.get("address"));
-        storeData.setStoreName(data.get("name"));
+        if(payMethod == Pay.CARD){
+            //card 금액 차감
+            if(user.getCard().getPrice() < price){
+                throw new LowCardPriceException();
+            }
+            user.getCard().setPrice(user.getCard().getPrice() - price);
 
-        return storeData;
-    }
-
-    public Map<String, String> getLocationFromApi(String address){
-
-        String locationUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json" +
-                "?query=" + address + "&key="+secretKey;
-
-        String getLocationData = getLocationString(locationUrl);
-        Map<String, String> parsedLocation = parseLocation(getLocationData);
-
-        String storeUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json" +
-                "?location=" + parsedLocation.get("lat") + "%" + parsedLocation.get("lng") +
-                "&query=스타벅스" +
-                "&radius=1000" +
-                "&key=" + secretKey + "&language=ko";
-
-        String paredStoreData = getLocationString(storeUrl);
-        Map<String, String> storeData = parseLocation(paredStoreData);
-
-        return storeData;
-    }
-
-    public Map<String, String> parseLocation(String jsonString){
-        JSONParser jsonParser = new JSONParser();
-        JSONObject jsonObject;
-
-        try {
-            jsonObject = (JSONObject) jsonParser.parse(jsonString);
-        } catch (ParseException e){
-            throw new RuntimeException(e);
+            //주문시 포인트 적립 (포인트가 12개가 되면 자동으로 쿠폰으로 교환)
+            int updatePoint = user.getPoint().getCount() + 1;
+            if(updatePoint == pointToCoupon){
+                user.getCoupon().setCount(user.getCoupon().getCount() + 1);
+                user.getPoint().setCount(0);
+            }
+            else{
+                user.getPoint().setCount(updatePoint);
+            }
         }
-
-        Map<String, String> resultMap = new HashMap<>();
-        JSONArray results = (JSONArray) jsonObject.get("results");
-        JSONObject resultObj = (JSONObject) results.get(0);
-        JSONObject geo = (JSONObject) resultObj.get("geometry");
-        String formattedAddress = (String) resultObj.get("formatted_address");
-        String name = (String) resultObj.get("name");
-        JSONObject location = (JSONObject) geo.get("location");
-
-        resultMap.put("lat", String.valueOf(location.get("lat")));
-        resultMap.put("lng", String.valueOf(location.get("lng")));
-        resultMap.put("address", formattedAddress);
-        resultMap.put("name", name);
-
-        return resultMap;
-    }
-
-    public String getLocationString(String apiUrl){
-
-        try {
-            URL url = new URL(apiUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            int responseCode = connection.getResponseCode();
-            BufferedReader br;
-
-            if(responseCode == 200){
-                br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            } else{
-                br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+        else if(payMethod == Pay.COUPON){
+            if(user.getCoupon().getCount() < 1){
+                throw new NotUserCouponException();
             }
 
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = br.readLine()) != null){
-                response.append(inputLine);
-            }
-            br.close();
-
-            return response.toString();
-        }catch (Exception e){
-            return "failed to get response";
+            user.getCoupon().setCount(user.getCoupon().getCount() - 1);
         }
+
+        memberRepository.save(user);
+        return listOrderRepository.save(order.toEntity(price, userName));
+    }
+
+    public List<ListOrderEntity> checkList(OrderStatus status) {
+
+        var orderList = listOrderRepository.findByOrderStatus(status);
+        if(orderList.size() == 0){
+            throw new NotOrderListException();
+        }
+        return orderList;
+    }
+
+    public ListOrderEntity changeOrderStatus(int orderNo) {
+        var orderStatus = listOrderRepository.findById(orderNo)
+                .orElseThrow(() -> new NotOrderListException());
+
+        orderStatus.setOrderStatus(OrderStatus.COMPLETE);
+        return listOrderRepository.save(orderStatus);
+    }
+
+    public List<ListOrderEntity> getOrderList(LocalDate start, LocalDate end) {
+        var result = listOrderRepository.findByOrderDateBetween(start.atTime(0, 0), end.atTime(23, 59));
+        if(result.size() == 0){
+            throw new NotOrderListException();
+        }
+        return result;
     }
 }

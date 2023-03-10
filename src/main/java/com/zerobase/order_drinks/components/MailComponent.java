@@ -1,7 +1,8 @@
 package com.zerobase.order_drinks.components;
 
+import com.zerobase.order_drinks.exception.impl.MailFailException;
+import com.zerobase.order_drinks.model.constants.MailText;
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.MimeMessagePreparator;
@@ -15,9 +16,13 @@ public class MailComponent {
 
     private final JavaMailSender javaMailSender;
 
-    public boolean sendMail(String mail, String subject, String text){
+    public boolean sendMail(String mail, String uuid){
 
         boolean result = false;
+        MailText mailText = new MailText();
+        String text = mailText.text + uuid + mailText.textEnd;
+        String subject = mailText.subject;
+
         MimeMessagePreparator msg = new MimeMessagePreparator() {
             @Override
             public void prepare(MimeMessage mimeMessage) throws Exception {
@@ -32,7 +37,7 @@ public class MailComponent {
             javaMailSender.send(msg);
             result = true;
         }catch (Exception e){
-            System.out.println(e.getMessage());
+            throw new MailFailException();
         }
 
         return result;

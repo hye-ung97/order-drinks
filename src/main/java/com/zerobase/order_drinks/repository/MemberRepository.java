@@ -1,7 +1,7 @@
 package com.zerobase.order_drinks.repository;
 
 
-import com.zerobase.order_drinks.model.MemberEntity;
+import com.zerobase.order_drinks.model.entity.MemberEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

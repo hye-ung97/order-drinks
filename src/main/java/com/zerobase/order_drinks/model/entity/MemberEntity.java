@@ -1,6 +1,8 @@
-package com.zerobase.order_drinks.model;
+package com.zerobase.order_drinks.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.zerobase.order_drinks.model.constants.EmailAuthStatus;
+import com.zerobase.order_drinks.model.constants.MemberStatus;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -30,14 +32,33 @@ public class MemberEntity implements UserDetails {
     @JsonIgnore
     private String password;
 
-    private boolean emailAuthStatus;
+    @Enumerated(EnumType.STRING)
+    private EmailAuthStatus emailAuthStatus;
     private String emailAuthKey;
-    private LocalDateTime emailAuthDate;
+    private LocalDateTime emailAuthDateTime;
+
+    @Enumerated(EnumType.STRING)
+    private MemberStatus memberStatus;
 
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> roles;
 
-    private LocalDateTime registerDate;
+    private LocalDateTime registerDateTime;
+
+    @OneToOne(cascade = CascadeType.PERSIST)
+    @JoinColumn(name = "CARD_ID")
+    private WalletEntity.Card card;
+
+    @OneToOne(cascade = CascadeType.PERSIST)
+    @JoinColumn(name = "POINT_ID")
+    private WalletEntity.Point point;
+
+    @OneToOne(cascade = CascadeType.PERSIST)
+    @JoinColumn(name = "COUPON_ID")
+    private WalletEntity.Coupon coupon;
+
+
+
 
     @Override
     @JsonIgnore
