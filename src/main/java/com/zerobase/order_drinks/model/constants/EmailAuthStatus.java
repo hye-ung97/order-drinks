@@ -5,9 +5,13 @@ public enum EmailAuthStatus {
     COMPLETE ("이메일 인증 완료");
 
 
-   String message;
+   private String message;
 
    EmailAuthStatus(String message){
        this.message = message;
+   }
+
+   public String getMessage(){
+       return this.message;
    }
 }

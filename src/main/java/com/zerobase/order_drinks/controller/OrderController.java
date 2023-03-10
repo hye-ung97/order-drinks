@@ -3,7 +3,6 @@ package com.zerobase.order_drinks.controller;
 import com.zerobase.order_drinks.model.constants.OrderStatus;
 import com.zerobase.order_drinks.model.dto.Order;
 import com.zerobase.order_drinks.model.dto.StoreData;
-import com.zerobase.order_drinks.security.TokenProvider;
 import com.zerobase.order_drinks.service.GoogleMapService;
 import com.zerobase.order_drinks.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -24,7 +24,6 @@ public class OrderController {
 
     private final OrderService orderService;
     private final GoogleMapService googleMapService;
-    private final TokenProvider tokenProvider;
 
     @GetMapping("/find-store")
     public ResponseEntity<?> findLocation(@RequestParam("address") String address) {
@@ -33,10 +32,8 @@ public class OrderController {
     }
 
     @PostMapping() // 음료 주문
-    public ResponseEntity<?> order(@RequestBody Order order, @RequestHeader("Authorization") String token){
-        String userName = this.tokenProvider.getUsername(token.replace("Bearer ", ""));
-        var result = orderService.orderReceipt(order, userName);
-
+    public ResponseEntity<?> order(@RequestBody Order order, HttpServletRequest request){
+        var result = orderService.orderReceipt(order, request.getUserPrincipal().getName());
         return ResponseEntity.ok(result);
     }
 

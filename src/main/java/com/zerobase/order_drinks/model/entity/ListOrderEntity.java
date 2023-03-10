@@ -22,7 +22,7 @@ public class ListOrderEntity {
 
     private String userName;
 
-    private LocalDateTime orderDate;
+    private LocalDateTime orderDateTime;
 
 
     private String menu;
@@ -33,4 +33,7 @@ public class ListOrderEntity {
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
+
+    private int quantity;
+    private LocalDateTime orderCompleteDateTime;
 }

@@ -6,7 +6,7 @@ import com.zerobase.order_drinks.model.constants.MemberStatus;
 import com.zerobase.order_drinks.model.dto.Auth;
 import com.zerobase.order_drinks.model.dto.Member;
 import com.zerobase.order_drinks.model.entity.MemberEntity;
-import com.zerobase.order_drinks.model.entity.WalletEntity;
+import com.zerobase.order_drinks.model.entity.Wallet;
 import com.zerobase.order_drinks.model.constants.EmailAuthStatus;
 import com.zerobase.order_drinks.repository.CardRepository;
 import com.zerobase.order_drinks.repository.CouponRepository;
@@ -59,16 +59,16 @@ public class MemberService implements UserDetailsService {
 
         member.setPassword(this.passwordEncoder.encode(member.getPassword()));
 
-        WalletEntity.Card card = new WalletEntity.Card();
+        Wallet.Card card = new Wallet.Card();
         card.setChargedDate(LocalDateTime.now());
         cardRepository.save(card);
 
-        WalletEntity.Coupon coupon = new WalletEntity.Coupon();
+        Wallet.Coupon coupon = new Wallet.Coupon();
         coupon.setCount(1);
         coupon.setUpdatedDate(LocalDateTime.now());
         couponRepository.save(coupon);
 
-        WalletEntity.Point point = new WalletEntity.Point();
+        Wallet.Point point = new Wallet.Point();
         point.setUpdatedDate(LocalDateTime.now());
         pointRepository.save(point);
 
@@ -137,7 +137,7 @@ public class MemberService implements UserDetailsService {
         return result;
     }
 
-    public WalletEntity.Card cardCharge(int price, String userName){
+    public Wallet.Card cardCharge(int price, String userName){
         var user = this.memberRepository.findByUsername(userName)
                 .orElseThrow(() -> new NoUserException());
 
@@ -150,12 +150,12 @@ public class MemberService implements UserDetailsService {
         return user.getCard();
     }
 
-    public WalletEntity getWallet(String userName){
+    public Wallet getWallet(String userName){
         var user = this.memberRepository.findByUsername(userName)
                 .orElseThrow(() -> new NoUserException());
 
-        WalletEntity wallet = new WalletEntity();
-        wallet.getWallet(user.getCard(), user.getCoupon(), user.getPoint());
+        Wallet wallet = new Wallet();
+        wallet.setWallet(user.getCard(), user.getCoupon(), user.getPoint());
 
         return wallet;
     }

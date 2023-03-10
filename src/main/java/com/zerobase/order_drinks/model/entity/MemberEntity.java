@@ -47,15 +47,15 @@ public class MemberEntity implements UserDetails {
 
     @OneToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "CARD_ID")
-    private WalletEntity.Card card;
+    private Wallet.Card card;
 
     @OneToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "POINT_ID")
-    private WalletEntity.Point point;
+    private Wallet.Point point;
 
     @OneToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "COUPON_ID")
-    private WalletEntity.Coupon coupon;
+    private Wallet.Coupon coupon;
 
 
 
