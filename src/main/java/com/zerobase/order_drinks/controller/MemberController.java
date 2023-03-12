@@ -1,11 +1,16 @@
 package com.zerobase.order_drinks.controller;
 
 import com.zerobase.order_drinks.model.dto.Auth;
-import com.zerobase.order_drinks.security.TokenProvider;
+import com.zerobase.order_drinks.model.dto.OrderBillDto;
 import com.zerobase.order_drinks.service.MemberService;
+import com.zerobase.order_drinks.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -15,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
-    private final TokenProvider tokenProvider;
+    private final OrderService orderService;
 
     @GetMapping("/withdraw")
     public ResponseEntity<?> withdraw(@RequestBody Auth.SignIn signIn){
@@ -23,18 +28,21 @@ public class MemberController {
     }
 
     @GetMapping("/wallet")
-    public ResponseEntity<?> getWallet(@RequestHeader("Authorization") String token){
-        String userName = this.tokenProvider.getUsername(token.replace("Bearer ", ""));
-        var result = memberService.getWallet(userName);
+    public ResponseEntity<?> getWallet(@AuthenticationPrincipal UserDetails user){
+        var result = memberService.getWallet(user.getUsername());
 
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/charge")
-    public ResponseEntity<?> charge(@RequestParam("price") int price, @RequestHeader("Authorization") String token){
-        String userName = this.tokenProvider.getUsername(token.replace("Bearer ", ""));
-        var result = memberService.cardCharge(price, userName);
-        log.info("token : " + userName);
+    public ResponseEntity<?> charge(@RequestParam("price") int price, @AuthenticationPrincipal UserDetails user){
+        var result = memberService.cardCharge(price, user.getUsername());
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/myOrder")
+    public ResponseEntity<?> getUserOrder(@AuthenticationPrincipal UserDetails user, Pageable pageable){
+        Page<OrderBillDto> result = orderService.getUserOrderList(user.getUsername(), pageable);
         return ResponseEntity.ok(result);
     }
 
