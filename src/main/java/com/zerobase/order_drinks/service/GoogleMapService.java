@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zerobase.order_drinks.exception.impl.ParseFailException;
 import com.zerobase.order_drinks.model.dto.MapDataObject;
 import com.zerobase.order_drinks.model.dto.StoreData;
+import com.zerobase.order_drinks.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
@@ -25,6 +26,7 @@ import java.util.PriorityQueue;
 @RequiredArgsConstructor
 public class GoogleMapService {
     private final RestTemplate restTemplate;
+    private final StoreRepository storeRepository;
 
     @Value("${spring.googleMap.key}")
     private String secretKey;
@@ -38,8 +40,15 @@ public class GoogleMapService {
 
         addressData = apiParse(currentLocationJson);
         MapDataObject.addressInfo addressInfo = addressData.getResults().get(0);
-        return storeLocation(addressInfo);
+        var result = storeLocation(addressInfo);
 
+        for(var data : result){
+            if(!storeRepository.existsByStoreName(data.getStoreName())){
+                storeRepository.save(data.toEntity());
+            }
+        }
+
+        return result;
     }
 
     public JSONObject currentLocation(String address){

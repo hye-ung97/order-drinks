@@ -23,6 +23,7 @@ public class Order {
                 .userName(userName)
                 .orderStatus(OrderStatus.ING)
                 .orderDateTime(LocalDateTime.now())
+                .pay(this.getPay())
                 .build();
     }
 }

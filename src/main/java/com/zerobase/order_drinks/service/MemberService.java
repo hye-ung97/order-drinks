@@ -118,6 +118,7 @@ public class MemberService implements UserDetailsService {
         MemberEntity memberEntity = optionalMember.get();
         memberEntity.setEmailAuthDateTime(LocalDateTime.now());
         memberEntity.setEmailAuthStatus(EmailAuthStatus.COMPLETE);
+        memberEntity.setMemberStatus(MemberStatus.ING);
         memberRepository.save(memberEntity);
 
         Member member = new Member();

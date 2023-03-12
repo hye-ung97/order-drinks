@@ -1,6 +1,8 @@
 package com.zerobase.order_drinks.service;
 
 
+import com.zerobase.order_drinks.exception.impl.AlreadyFinishedDrinkException;
+import com.zerobase.order_drinks.exception.impl.NotFoundStoreDataException;
 import com.zerobase.order_drinks.exception.impl.member.LowCardPriceException;
 import com.zerobase.order_drinks.exception.impl.member.NoUserException;
 import com.zerobase.order_drinks.exception.impl.member.NotUserCouponException;
@@ -9,11 +11,18 @@ import com.zerobase.order_drinks.exception.impl.menu.NotOrderListException;
 import com.zerobase.order_drinks.model.constants.OrderStatus;
 import com.zerobase.order_drinks.model.constants.Pay;
 import com.zerobase.order_drinks.model.dto.Order;
-import com.zerobase.order_drinks.model.dto.OrderComplete;
+import com.zerobase.order_drinks.model.dto.OrderBillDto;
+import com.zerobase.order_drinks.model.dto.StoreGroupDtoImp;
+import com.zerobase.order_drinks.model.dto.StoreOrderBillDto;
 import com.zerobase.order_drinks.model.entity.ListOrderEntity;
-import com.zerobase.order_drinks.repository.*;
+import com.zerobase.order_drinks.repository.ListOrderRepository;
+import com.zerobase.order_drinks.repository.MemberRepository;
+import com.zerobase.order_drinks.repository.MenuRepository;
+import com.zerobase.order_drinks.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,11 +36,18 @@ public class OrderService {
     private final MenuRepository menuRepository;
     private final MemberRepository memberRepository;
     private final ListOrderRepository listOrderRepository;
+    private final StoreRepository storeRepository;
+
     private final int pointToCoupon = 12;
 
-    public OrderComplete orderReceipt(Order order, String userName){
+    public OrderBillDto orderReceipt(Order order, String userName){
         var menu = menuRepository.findByMenuName(order.getItem())
                 .orElseThrow(() -> new NoMenuException());
+
+        if(!storeRepository.existsByStoreName(order.getStoreName())){
+            throw new NotFoundStoreDataException();
+        }
+
         int price = menu.getPrice() * order.getQuantity();
 
         var user = memberRepository.findByUsername(userName).orElseThrow(() -> new NoUserException());
@@ -47,9 +63,9 @@ public class OrderService {
 
             //주문시 포인트 적립 (포인트가 12개가 되면 자동으로 쿠폰으로 교환)
             int updatePoint = user.getPoint().getCount() + order.getQuantity();
-            if(updatePoint == pointToCoupon){
+            if(updatePoint >= pointToCoupon){
                 user.getCoupon().setCount(user.getCoupon().getCount() + 1);
-                user.getPoint().setCount(user.getPoint().getCount() - pointToCoupon);
+                user.getPoint().setCount(user.getPoint().getCount() - pointToCoupon + 1);
             }
             else{
                 user.getPoint().setCount(updatePoint);
@@ -66,10 +82,10 @@ public class OrderService {
         memberRepository.save(user);
         var result = listOrderRepository.save(order.toEntity(price, userName));
 
-        return new OrderComplete().toDto(result, order.getPay());
+        return new OrderBillDto().toDto(result);
     }
 
-    public List<ListOrderEntity> checkList(OrderStatus status) {
+    public List<ListOrderEntity> checkStatus(OrderStatus status) {
 
         var orderList = listOrderRepository.findByOrderStatus(status);
         if(orderList.size() == 0){
@@ -83,7 +99,7 @@ public class OrderService {
                 .orElseThrow(() -> new NotOrderListException());
 
         if(orderStatus.getOrderStatus() == OrderStatus.COMPLETE){
-            throw new RuntimeException("이미 주문 완료된 음료 입니다.");
+            throw new AlreadyFinishedDrinkException();
         }
 
         orderStatus.setOrderStatus(OrderStatus.COMPLETE);
@@ -98,5 +114,26 @@ public class OrderService {
             throw new NotOrderListException();
         }
         return result;
+    }
+
+    public Page<OrderBillDto> getUserOrderList(String userName, Pageable pageable) {
+        Page<ListOrderEntity> listOrderEntityPage = listOrderRepository.findByUserName(userName, pageable);
+        Page<OrderBillDto> orderBillDto = listOrderEntityPage.map(m -> new OrderBillDto().toDto(m));
+        return orderBillDto;
+    }
+
+    public StoreOrderBillDto getOrderListByStoreName(String storeName, LocalDate startDate, LocalDate endDate) {
+        var result = listOrderRepository.findByStoreAndOrderDateTimeBetween(storeName,
+                startDate.atTime(0,0,0), endDate.atTime(23,59,59));
+        long sum = result.stream().mapToLong(ListOrderEntity::getPrice).sum();
+
+        StoreOrderBillDto storeOrderBillDto = new StoreOrderBillDto();
+        storeOrderBillDto.setSum(sum);
+        storeOrderBillDto.setOrderList(result);
+        return storeOrderBillDto;
+    }
+
+    public List<StoreGroupDtoImp> getEachStoreSalesPrice(LocalDate startDate, LocalDate endDate){
+        return listOrderRepository.findByStoreGroupSalesPrice(startDate, endDate);
     }
 }

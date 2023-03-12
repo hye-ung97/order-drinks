@@ -1,6 +1,7 @@
 package com.zerobase.order_drinks.model.entity;
 
 import com.zerobase.order_drinks.model.constants.OrderStatus;
+import com.zerobase.order_drinks.model.constants.Pay;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,4 +37,6 @@ public class ListOrderEntity {
 
     private int quantity;
     private LocalDateTime orderCompleteDateTime;
+
+    private Pay pay;
 }
