@@ -27,10 +27,10 @@ public class GoogleMapService {
     private final RestTemplate restTemplate;
 
     @Value("${spring.googleMap.key}")
-    private static String secretKey;
+    private String secretKey;
 
     private final static String baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
-    private final static String cafeName = "스타벅스";
+    private final static String cafeName = "starbucks";
 
     public List<StoreData> findStoreFromApi(String address) {
         JSONObject currentLocationJson = currentLocation(address);
