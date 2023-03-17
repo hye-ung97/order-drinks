@@ -8,6 +8,8 @@ import com.zerobase.order_drinks.service.GoogleMapService;
 import com.zerobase.order_drinks.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,8 +44,8 @@ public class OrderController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list/{status}") //제작중 / 제작완료 음료 리스트 보기
-    public ResponseEntity<?> orderStatus(@PathVariable OrderStatus status){
-        var result = orderService.checkStatus(status);
+    public ResponseEntity<?> orderStatus(@PathVariable OrderStatus status, Pageable pageable){
+        var result = orderService.checkStatus(status, pageable);
         return ResponseEntity.ok(result);
     }
 
@@ -57,9 +59,10 @@ public class OrderController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list") //기간별 주문 리스트 보기
     public ResponseEntity<?> orderListByTerm(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate){
+                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                                             Pageable pageable){
 
-        var result = orderService.getOrderList(startDate, endDate);
+        var result = orderService.getOrderList(startDate, endDate, pageable);
         return ResponseEntity.ok(result);
     }
 
@@ -67,16 +70,18 @@ public class OrderController {
     @GetMapping("/list-store") //지점 주문 리스트 보기(기간별)
     public ResponseEntity<?> orderListByStore(@RequestParam String storeName,
                                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate){
-        var result = orderService.getOrderListByStoreName(storeName, startDate, endDate);
+                                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                                              Pageable pageable){
+        var result = orderService.getOrderListByStoreName(storeName, startDate, endDate, pageable);
         return ResponseEntity.ok(result);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list-each") //각각의 지점별 판매 금액 보기(기간별)
     public ResponseEntity<?> eachStorePriceList(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate){
-        var result = orderService.getEachStoreSalesPrice(startDate, endDate);
+                                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                                                Pageable pageable){
+        var result = orderService.getEachStoreSalesPrice(startDate, endDate, pageable);
         return ResponseEntity.ok(result);
     }
 

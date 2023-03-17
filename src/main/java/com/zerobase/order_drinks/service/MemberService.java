@@ -1,13 +1,13 @@
 package com.zerobase.order_drinks.service;
 
 import com.zerobase.order_drinks.components.MailComponent;
-import com.zerobase.order_drinks.exception.impl.member.*;
+import com.zerobase.order_drinks.exception.CustomException;
+import com.zerobase.order_drinks.model.constants.EmailAuthStatus;
 import com.zerobase.order_drinks.model.constants.MemberStatus;
 import com.zerobase.order_drinks.model.dto.Auth;
 import com.zerobase.order_drinks.model.dto.Member;
 import com.zerobase.order_drinks.model.entity.MemberEntity;
 import com.zerobase.order_drinks.model.entity.Wallet;
-import com.zerobase.order_drinks.model.constants.EmailAuthStatus;
 import com.zerobase.order_drinks.repository.CardRepository;
 import com.zerobase.order_drinks.repository.CouponRepository;
 import com.zerobase.order_drinks.repository.MemberRepository;
@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.zerobase.order_drinks.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -49,12 +51,12 @@ public class MemberService implements UserDetailsService {
     public MemberEntity register(Auth.SignUp member){
         boolean exists = this.memberRepository.existsByUsername(member.getUsername());
         if(exists){
-            throw new AlreadyExistUserException();
+            throw new CustomException(ALREADY_EXIST_USER);
         }
 
         boolean validEmail = isValidEmail(member.getUsername());
         if(!validEmail){
-            throw new NoEmailPatternException();
+            throw new CustomException(NO_EMAIL_PATTERN);
         }
 
         member.setPassword(this.passwordEncoder.encode(member.getPassword()));
@@ -90,19 +92,20 @@ public class MemberService implements UserDetailsService {
     }
 
     public MemberEntity authenticate(Auth.SignIn member){
+        log.info("1");
         var user = this.memberRepository.findByUsername(member.getUsername())
-                .orElseThrow(() -> new NoUserException());
-
+                .orElseThrow(() -> new CustomException(NOT_EXIST_USER));
+        log.info("2");
         if(!this.passwordEncoder.matches(member.getPassword(), user.getPassword())){
-            throw new PasswordNotMatchException();
+            throw new CustomException(PASSWORD_NOT_MATCH);
         }
 
         if(user.getEmailAuthStatus() == EmailAuthStatus.ING){
-            throw new NoEmailAuthException();
+            throw new CustomException(NO_EMAIL_AUTH);
         }
 
         if(user.getMemberStatus() == MemberStatus.WITHDRAW){
-            throw new WithdrawUserException();
+            throw new CustomException(WITHDRAW_USER);
         }
 
         return user;
@@ -112,7 +115,7 @@ public class MemberService implements UserDetailsService {
         Optional<MemberEntity> optionalMember = memberRepository.findByEmailAuthKey(uuid);
 
         if(!optionalMember.isPresent()){
-            throw new NoUserException();
+            throw new CustomException(NOT_EXIST_USER);
         }
 
         MemberEntity memberEntity = optionalMember.get();
@@ -140,7 +143,7 @@ public class MemberService implements UserDetailsService {
 
     public Wallet.Card cardCharge(int price, String userName){
         var user = this.memberRepository.findByUsername(userName)
-                .orElseThrow(() -> new NoUserException());
+                .orElseThrow(() -> new CustomException(NOT_EXIST_USER));
 
         int chargedPrice = user.getCard().getPrice() + price;
         user.getCard().setPrice(chargedPrice);
@@ -153,7 +156,7 @@ public class MemberService implements UserDetailsService {
 
     public Wallet getWallet(String userName){
         var user = this.memberRepository.findByUsername(userName)
-                .orElseThrow(() -> new NoUserException());
+                .orElseThrow(() -> new CustomException(NOT_EXIST_USER));
 
         Wallet wallet = new Wallet();
         wallet.setWallet(user.getCard(), user.getCoupon(), user.getPoint());

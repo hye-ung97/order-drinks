@@ -1,16 +1,15 @@
 package com.zerobase.order_drinks.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.zerobase.order_drinks.exception.impl.ParseFailException;
 import com.zerobase.order_drinks.model.dto.MapDataObject;
 import com.zerobase.order_drinks.model.dto.StoreData;
 import com.zerobase.order_drinks.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
@@ -35,11 +34,9 @@ public class GoogleMapService {
     private final static String cafeName = "starbucks";
 
     public List<StoreData> findStoreFromApi(String address) {
-        JSONObject currentLocationJson = currentLocation(address);
-        MapDataObject.address addressData = null;
+        MapDataObject.address currentLocationJson = currentLocation(address);
 
-        addressData = apiParse(currentLocationJson);
-        MapDataObject.addressInfo addressInfo = addressData.getResults().get(0);
+        MapDataObject.addressInfo addressInfo = currentLocationJson.getResults().get(0);
         var result = storeLocation(addressInfo);
 
         for(var data : result){
@@ -51,7 +48,7 @@ public class GoogleMapService {
         return result;
     }
 
-    public JSONObject currentLocation(String address){
+    public MapDataObject.address currentLocation(String address){
         address = address.replace(" ", "+").trim();
 
         UriComponents builder = UriComponentsBuilder.fromHttpUrl(baseUrl)
@@ -78,11 +75,7 @@ public class GoogleMapService {
 
         log.info("url : " + builder);
 
-        JSONObject jsonObject = getJsonFromApi(builder);
-        MapDataObject.address addressData = null;
-
-        addressData = apiParse(jsonObject);
-
+        MapDataObject.address addressData = getJsonFromApi(builder);
         List<MapDataObject.addressInfo> addressList = addressData.getResults();
 
         PriorityQueue<StoreData> pq = new PriorityQueue<>(new Comparator<StoreData>() {
@@ -105,10 +98,11 @@ public class GoogleMapService {
             double storeLng = data.getGeometry().getLocation().getLng();
             double dist = distance(lat, lng, storeLat, storeLng);
 
-            StoreData storeData = new StoreData();
-            storeData.setStoreName(data.getName());
-            storeData.setAddress(data.getFormatted_address());
-            storeData.setDistance(String.format("%.3f km", dist));
+            StoreData storeData = StoreData.builder()
+                    .storeName(data.getName())
+                    .distance(String.format("%.3f km", dist))
+                    .address(data.getFormatted_address())
+                    .build();
             pq.add(storeData);
         }
 
@@ -119,20 +113,10 @@ public class GoogleMapService {
         return result;
     }
 
-    public JSONObject getJsonFromApi(UriComponents builder) {
+    public MapDataObject.address getJsonFromApi(UriComponents builder) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        ResponseEntity<JSONObject> response = restTemplate.exchange(builder.toUri(), HttpMethod.GET, new HttpEntity<>(headers), JSONObject.class);
-        return response.getBody();
-    }
-
-    public MapDataObject.address apiParse(JSONObject jsonString) {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.readValue(jsonString.toJSONString(), MapDataObject.address.class);
-        } catch (JsonProcessingException e) {
-            throw new ParseFailException();
-        }
+        return restTemplate.exchange(builder.toUri(), HttpMethod.GET, new HttpEntity<>(headers), MapDataObject.address.class).getBody();
     }
 
     // 좌표간의 거리 계산

@@ -1,9 +1,11 @@
 package com.zerobase.order_drinks.model.dto;
 
 import com.zerobase.order_drinks.model.entity.StoreEntity;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class StoreData {
     private String storeName;
     private String address;

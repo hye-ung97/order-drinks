@@ -1,18 +1,12 @@
 package com.zerobase.order_drinks.service;
 
 
-import com.zerobase.order_drinks.exception.impl.AlreadyFinishedDrinkException;
-import com.zerobase.order_drinks.exception.impl.NotFoundStoreDataException;
-import com.zerobase.order_drinks.exception.impl.member.LowCardPriceException;
-import com.zerobase.order_drinks.exception.impl.member.NoUserException;
-import com.zerobase.order_drinks.exception.impl.member.NotUserCouponException;
-import com.zerobase.order_drinks.exception.impl.menu.NoMenuException;
-import com.zerobase.order_drinks.exception.impl.menu.NotOrderListException;
+import com.zerobase.order_drinks.exception.CustomException;
 import com.zerobase.order_drinks.model.constants.OrderStatus;
 import com.zerobase.order_drinks.model.constants.Pay;
 import com.zerobase.order_drinks.model.dto.Order;
 import com.zerobase.order_drinks.model.dto.OrderBillDto;
-import com.zerobase.order_drinks.model.dto.StoreGroupDtoImp;
+import com.zerobase.order_drinks.model.dto.StoreGroupDto;
 import com.zerobase.order_drinks.model.dto.StoreOrderBillDto;
 import com.zerobase.order_drinks.model.entity.ListOrderEntity;
 import com.zerobase.order_drinks.repository.ListOrderRepository;
@@ -27,7 +21,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
+
+import static com.zerobase.order_drinks.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -42,22 +37,22 @@ public class OrderService {
 
     public OrderBillDto orderReceipt(Order order, String userName){
         var menu = menuRepository.findByMenuName(order.getItem())
-                .orElseThrow(() -> new NoMenuException());
+                .orElseThrow(() -> new CustomException(NOT_EXIST_MENU));
 
         if(!storeRepository.existsByStoreName(order.getStoreName())){
-            throw new NotFoundStoreDataException();
+            throw new CustomException(NOT_FOUND_STORE_DATA);
         }
 
         int price = menu.getPrice() * order.getQuantity();
 
-        var user = memberRepository.findByUsername(userName).orElseThrow(() -> new NoUserException());
+        var user = memberRepository.findByUsername(userName).orElseThrow(() -> new CustomException(NOT_EXIST_USER));
 
         Pay payMethod = order.getPay();
 
         if(payMethod == Pay.CARD){
             //card 금액 차감
             if(user.getCard().getPrice() < price){
-                throw new LowCardPriceException();
+                throw new CustomException(LOW_CARD_PRICE);
             }
             user.getCard().setPrice(user.getCard().getPrice() - price);
 
@@ -65,7 +60,7 @@ public class OrderService {
             int updatePoint = user.getPoint().getCount() + order.getQuantity();
             if(updatePoint >= pointToCoupon){
                 user.getCoupon().setCount(user.getCoupon().getCount() + 1);
-                user.getPoint().setCount(user.getPoint().getCount() - pointToCoupon + 1);
+                user.getPoint().setCount(updatePoint - pointToCoupon);
             }
             else{
                 user.getPoint().setCount(updatePoint);
@@ -73,7 +68,7 @@ public class OrderService {
         }
         else if(payMethod == Pay.COUPON){
             if(user.getCoupon().getCount() < 1){
-                throw new NotUserCouponException();
+                throw new CustomException(UNAVAILABLE_COUPON);
             }
 
             user.getCoupon().setCount(user.getCoupon().getCount() - 1);
@@ -85,21 +80,21 @@ public class OrderService {
         return new OrderBillDto().toDto(result);
     }
 
-    public List<ListOrderEntity> checkStatus(OrderStatus status) {
+    public Page<ListOrderEntity> checkStatus(OrderStatus status, Pageable pageable) {
 
-        var orderList = listOrderRepository.findByOrderStatus(status);
-        if(orderList.size() == 0){
-            throw new NotOrderListException();
+        Page<ListOrderEntity> listOrderEntityPage = listOrderRepository.findByOrderStatus(status, pageable);
+        if(listOrderEntityPage.isEmpty()){
+            throw new CustomException(NOT_EXIST_ORDER_LIST);
         }
-        return orderList;
+        return listOrderEntityPage;
     }
 
     public ListOrderEntity changeOrderStatus(int orderNo) {
         var orderStatus = listOrderRepository.findById(orderNo)
-                .orElseThrow(() -> new NotOrderListException());
+                .orElseThrow(() -> new CustomException(NOT_EXIST_ORDER_LIST));
 
         if(orderStatus.getOrderStatus() == OrderStatus.COMPLETE){
-            throw new AlreadyFinishedDrinkException();
+            throw new CustomException(ALREADY_FINISHED_DRINK);
         }
 
         orderStatus.setOrderStatus(OrderStatus.COMPLETE);
@@ -108,23 +103,32 @@ public class OrderService {
         return listOrderRepository.save(orderStatus);
     }
 
-    public List<ListOrderEntity> getOrderList(LocalDate start, LocalDate end) {
-        var result = listOrderRepository.findByOrderDateTimeBetween(start.atTime(0, 0,0), end.atTime(23, 59,59));
-        if(result.size() == 0){
-            throw new NotOrderListException();
+    public Page<ListOrderEntity> getOrderList(LocalDate start, LocalDate end, Pageable pageable) {
+        Page<ListOrderEntity> result = listOrderRepository.findByOrderDateTimeBetween(
+                start.atTime(0, 0,0), end.atTime(23, 59,59),
+                pageable);
+
+        if(result.isEmpty()){
+            throw new CustomException(NOT_EXIST_ORDER_LIST);
         }
+
         return result;
     }
 
     public Page<OrderBillDto> getUserOrderList(String userName, Pageable pageable) {
         Page<ListOrderEntity> listOrderEntityPage = listOrderRepository.findByUserName(userName, pageable);
+        if(listOrderEntityPage.isEmpty()) throw new CustomException(NOT_EXIST_ORDER_LIST);
         Page<OrderBillDto> orderBillDto = listOrderEntityPage.map(m -> new OrderBillDto().toDto(m));
         return orderBillDto;
     }
 
-    public StoreOrderBillDto getOrderListByStoreName(String storeName, LocalDate startDate, LocalDate endDate) {
-        var result = listOrderRepository.findByStoreAndOrderDateTimeBetween(storeName,
-                startDate.atTime(0,0,0), endDate.atTime(23,59,59));
+    public StoreOrderBillDto getOrderListByStoreName(String storeName, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        if(!storeRepository.existsByStoreName(storeName)){
+            throw new CustomException(NOT_FOUND_STORE_DATA);
+        }
+
+        Page<ListOrderEntity> result = listOrderRepository.findByStoreAndOrderDateTimeBetween(storeName,
+                startDate.atTime(0,0,0), endDate.atTime(23,59,59), pageable);
         long sum = result.stream().mapToLong(ListOrderEntity::getPrice).sum();
 
         StoreOrderBillDto storeOrderBillDto = new StoreOrderBillDto();
@@ -133,7 +137,11 @@ public class OrderService {
         return storeOrderBillDto;
     }
 
-    public List<StoreGroupDtoImp> getEachStoreSalesPrice(LocalDate startDate, LocalDate endDate){
-        return listOrderRepository.findByStoreGroupSalesPrice(startDate, endDate);
+    public Page<StoreGroupDto> getEachStoreSalesPrice(LocalDate startDate, LocalDate endDate, Pageable pageable){
+        var result = listOrderRepository.findByStoreGroupSalesPrice(startDate, endDate, pageable);
+        if(result.isEmpty()){
+            throw new CustomException(NOT_EXIST_STORE_SALES_DATA);
+        }
+        return result;
     }
 }

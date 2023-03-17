@@ -38,5 +38,6 @@ public class ListOrderEntity {
     private int quantity;
     private LocalDateTime orderCompleteDateTime;
 
+    @Enumerated(EnumType.STRING)
     private Pay pay;
 }

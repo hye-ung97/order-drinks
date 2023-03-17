@@ -15,15 +15,17 @@ import java.util.Map;
 public class NotificationService {
 
     private final EmitterRepositoryImpl emitterRepository;
+    static String id;
 
     public SseEmitter subscribe(String email, String lastEventId) {
 
         String emitterId = makeTimeIncludeId(email);
+        id = emitterId;
 
         SseEmitter emitter;
 
         //버그 방지용
-        if (emitterRepository.findAllEmitterStartWithByEmail(email) != null){
+        if (emitterRepository.findEmitterStartWithByEmail(email) != null){
             emitterRepository.deleteAllEmitterStartWithId(email);
             emitter = emitterRepository.save(emitterId, new SseEmitter(Long.MAX_VALUE));
         }
@@ -88,19 +90,11 @@ public class NotificationService {
 
         Notification notification = createNotification(receiver, content, urlValue);
 
-        // 로그인 한 유저의 SseEmitter 모두 가져오기
-        Map<String, SseEmitter> sseEmitters = emitterRepository.findAllEmitterStartWithByEmail(receiver);
+        // 로그인 한 유저의 SseEmitter 가져오기
+        SseEmitter sseEmitters = emitterRepository.findEmitterStartWithByEmail(receiver);
 
-        sseEmitters.forEach(
-                (key, emitter) -> {
-                    // 데이터 캐시 저장(유실된 데이터 처리하기 위함)
-                    emitterRepository.saveEventCache(key, notification);
-                    // 데이터 전송
-                    sendToClient(emitter, key, notification);
-                }
-        );
-
-        log.info("send alert receiver : " + receiver +" / urlValue : " + urlValue);
+        sendToClient(sseEmitters, id, notification);
+        log.info("send alert receiver : " + receiver +" , urlValue : " + urlValue + ", eventId : " + id);
     }
 
     private Notification createNotification(String receiver, String content, int urlValue) {
@@ -113,7 +107,7 @@ public class NotificationService {
     }
 
     private void sendToClient(SseEmitter emitter, String id, Object data) {
-
+        log.info("id : "+ id);
         try {
             emitter.send(SseEmitter.event()
                     .id(id)

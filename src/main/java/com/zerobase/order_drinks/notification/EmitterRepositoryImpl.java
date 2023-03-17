@@ -30,10 +30,13 @@ public class EmitterRepositoryImpl implements EmitterRepository {
     }
 
     @Override
-    public Map<String, SseEmitter> findAllEmitterStartWithByEmail(String email) {
-        return emitters.entrySet().stream() //여러개의 Emitter가 존재할 수 있기떄문에 stream 사용
-                .filter(entry -> entry.getKey().startsWith(email))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    public SseEmitter findEmitterStartWithByEmail(String email) {
+        for(Map.Entry<String, SseEmitter> map : emitters.entrySet()){
+            if(map.getKey().startsWith(email)){
+                return map.getValue();
+            }
+        }
+        return null;
     }
 
     @Override

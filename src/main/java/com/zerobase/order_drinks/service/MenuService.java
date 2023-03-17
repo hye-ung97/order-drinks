@@ -1,6 +1,7 @@
 package com.zerobase.order_drinks.service;
 
-import com.zerobase.order_drinks.exception.impl.menu.AlreadyExistMenuException;
+
+import com.zerobase.order_drinks.exception.CustomException;
 import com.zerobase.order_drinks.model.dto.Menu;
 import com.zerobase.order_drinks.model.entity.MenuEntity;
 import com.zerobase.order_drinks.repository.MenuRepository;
@@ -10,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static com.zerobase.order_drinks.exception.ErrorCode.EXIST_MENU;
+import static com.zerobase.order_drinks.exception.ErrorCode.NOT_EXIST_MENU_LIST;
 
 @Slf4j
 @Service
@@ -21,7 +24,7 @@ public class MenuService {
     public MenuEntity menuRegister(Menu menu){
         boolean exists = this.menuRepository.existsByMenuName(menu.getMenuName());
         if(exists){
-            throw new AlreadyExistMenuException();
+            throw new CustomException(EXIST_MENU);
         }
 
         var result = this.menuRepository.save(menu.toEntity());
@@ -31,6 +34,9 @@ public class MenuService {
 
     public Page<Menu> menuList(Pageable pageable) {
         Page<MenuEntity> menuEntityPage = this.menuRepository.findAll(pageable);
+        if(menuEntityPage.isEmpty()){
+            throw new CustomException(NOT_EXIST_MENU_LIST);
+        }
 
         Page<Menu> menuPage = menuEntityPage.map(m -> new Menu().menuDto(m.getMenuName(), m.getPrice()));
 

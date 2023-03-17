@@ -1,6 +1,6 @@
 package com.zerobase.order_drinks.components;
 
-import com.zerobase.order_drinks.exception.impl.MailFailException;
+import com.zerobase.order_drinks.exception.CustomException;
 import com.zerobase.order_drinks.model.constants.MailText;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -9,6 +9,8 @@ import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.stereotype.Component;
 
 import javax.mail.internet.MimeMessage;
+
+import static com.zerobase.order_drinks.exception.ErrorCode.MAIL_FAIL;
 
 @RequiredArgsConstructor
 @Component
@@ -37,7 +39,7 @@ public class MailComponent {
             javaMailSender.send(msg);
             result = true;
         }catch (Exception e){
-            throw new MailFailException();
+            throw new CustomException(MAIL_FAIL);
         }
 
         return result;

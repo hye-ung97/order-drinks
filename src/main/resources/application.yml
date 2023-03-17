@@ -1,0 +1,38 @@
+
+spring:
+  application:
+    name: order-drink
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      use-new-id-generator-mappings: false
+    show-sql: true
+    defer-datasource-initialization: true
+
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/orderProject
+    username: test1
+    password: 1234
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: hysung714@gmail.com
+    password: fcqakmdnvzzsiesn
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: true
+
+  freemarker:
+    expose-session-attributes: true
+
+  jwt:
+    secret: ZGF5b25lLXNwcmluZy1ib290LWRpdmlkZW5kLXByb2plY3QtdHV0b3JpYWwtand0LXNlY3JldC1rZXkK
+
+
+  googleMap:
+    key: AIzaSyAmTmDFTtD1OhPTngKwvJWsX_malDxdWXg
