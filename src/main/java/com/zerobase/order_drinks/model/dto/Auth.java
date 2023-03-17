@@ -3,7 +3,7 @@ package com.zerobase.order_drinks.model.dto;
 import com.zerobase.order_drinks.model.entity.MemberEntity;
 import com.zerobase.order_drinks.model.constants.EmailAuthStatus;
 import com.zerobase.order_drinks.model.constants.MemberStatus;
-import com.zerobase.order_drinks.model.entity.WalletEntity;
+import com.zerobase.order_drinks.model.entity.Wallet;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -22,7 +22,7 @@ public class Auth {
         private String password;
         private List<String> roles;
 
-        public MemberEntity toEntity(String uuid, WalletEntity.Card card, WalletEntity.Coupon coupon, WalletEntity.Point point){
+        public MemberEntity toEntity(String uuid, Wallet.Card card, Wallet.Coupon coupon, Wallet.Point point){
             return MemberEntity.builder()
                                     .username(this.username)
                                     .password(this.password)

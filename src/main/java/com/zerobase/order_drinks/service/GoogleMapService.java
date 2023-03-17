@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zerobase.order_drinks.exception.impl.ParseFailException;
 import com.zerobase.order_drinks.model.dto.MapDataObject;
 import com.zerobase.order_drinks.model.dto.StoreData;
+import com.zerobase.order_drinks.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -24,23 +26,32 @@ import java.util.PriorityQueue;
 @RequiredArgsConstructor
 public class GoogleMapService {
     private final RestTemplate restTemplate;
+    private final StoreRepository storeRepository;
 
     @Value("${spring.googleMap.key}")
     private String secretKey;
 
-    private String baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+    private final static String baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+    private final static String cafeName = "starbucks";
 
     public List<StoreData> findStoreFromApi(String address) {
-        String currentLocationString = currentLocation(address);
+        JSONObject currentLocationJson = currentLocation(address);
         MapDataObject.address addressData = null;
 
-        addressData = apiParse(currentLocationString);
+        addressData = apiParse(currentLocationJson);
         MapDataObject.addressInfo addressInfo = addressData.getResults().get(0);
-        return storeLocation(addressInfo);
+        var result = storeLocation(addressInfo);
 
+        for(var data : result){
+            if(!storeRepository.existsByStoreName(data.getStoreName())){
+                storeRepository.save(data.toEntity());
+            }
+        }
+
+        return result;
     }
 
-    public String currentLocation(String address){
+    public JSONObject currentLocation(String address){
         address = address.replace(" ", "+").trim();
 
         UriComponents builder = UriComponentsBuilder.fromHttpUrl(baseUrl)
@@ -48,7 +59,10 @@ public class GoogleMapService {
                 .queryParam("key", secretKey)
                 .queryParam("language", "ko").encode().build();
 
-        return apitoString(builder);
+        log.info("current address : " + address);
+        log.info("current url : " + builder);
+
+        return getJsonFromApi(builder);
     }
 
     public List<StoreData> storeLocation(MapDataObject.addressInfo current) {
@@ -56,16 +70,18 @@ public class GoogleMapService {
         double lng = current.getGeometry().getLocation().getLng();
 
         UriComponents builder = UriComponentsBuilder.fromHttpUrl(baseUrl)
-                .queryParam("location", lat + "%" + lng)
-                .queryParam("query", "스타벅스")
+                .queryParam("location", lat + "," + lng)
+                .queryParam("query", cafeName)
                 .queryParam("radius", "1000")
                 .queryParam("key", secretKey)
-                .queryParam("language", "ko").build();
+                .queryParam("language", "ko").encode().build();
 
-        String jsonString = apitoString(builder);
+        log.info("url : " + builder);
+
+        JSONObject jsonObject = getJsonFromApi(builder);
         MapDataObject.address addressData = null;
 
-        addressData = apiParse(jsonString);
+        addressData = apiParse(jsonObject);
 
         List<MapDataObject.addressInfo> addressList = addressData.getResults();
 
@@ -103,17 +119,17 @@ public class GoogleMapService {
         return result;
     }
 
-    public String apitoString(UriComponents builder) {
+    public JSONObject getJsonFromApi(UriComponents builder) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        ResponseEntity<String> response = restTemplate.exchange(builder.toUri(), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        ResponseEntity<JSONObject> response = restTemplate.exchange(builder.toUri(), HttpMethod.GET, new HttpEntity<>(headers), JSONObject.class);
         return response.getBody();
     }
 
-    public MapDataObject.address apiParse(String jsonString) {
+    public MapDataObject.address apiParse(JSONObject jsonString) {
         ObjectMapper mapper = new ObjectMapper();
         try {
-            return mapper.readValue(jsonString, MapDataObject.address.class);
+            return mapper.readValue(jsonString.toJSONString(), MapDataObject.address.class);
         } catch (JsonProcessingException e) {
             throw new ParseFailException();
         }

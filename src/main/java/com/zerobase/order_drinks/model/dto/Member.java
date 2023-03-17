@@ -3,9 +3,8 @@ package com.zerobase.order_drinks.model.dto;
 import com.zerobase.order_drinks.model.constants.EmailAuthStatus;
 import com.zerobase.order_drinks.model.constants.MemberStatus;
 import com.zerobase.order_drinks.model.entity.MemberEntity;
-import com.zerobase.order_drinks.model.entity.WalletEntity;
+import com.zerobase.order_drinks.model.entity.Wallet;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -23,9 +22,9 @@ public class Member {
     private LocalDateTime registerDateTime;
     private MemberStatus memberStatus;
 
-    private WalletEntity.Card card;
-    private WalletEntity.Point point;
-    private WalletEntity.Coupon coupon;
+    private Wallet.Card card;
+    private Wallet.Point point;
+    private Wallet.Coupon coupon;
 
 
     public void toMember(MemberEntity memberEntity) {

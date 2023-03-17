@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Data
 public class Order {
     private String item;
+    private int quantity;
     private String storeName;
     private Pay pay;
 
@@ -18,9 +19,11 @@ public class Order {
                 .menu(this.item)
                 .store(this.storeName)
                 .price(price)
+                .quantity(this.quantity)
                 .userName(userName)
                 .orderStatus(OrderStatus.ING)
-                .orderDate(LocalDateTime.now())
+                .orderDateTime(LocalDateTime.now())
+                .pay(this.getPay())
                 .build();
     }
 }
