@@ -1,6 +1,6 @@
 package com.zerobase.order_drinks.model.dto;
 
-public interface StoreGroupDtoImp {
+public interface StoreGroupDto {
     String getStoreName();
     long getTotalPrice();
 }

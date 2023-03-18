@@ -16,7 +16,7 @@ public class StoreEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int storeId;
 
-    @Column(name = "storeName", unique = true)
+    @Column(name = "store_name", unique = true)
     private String storeName;
     private String address;
 

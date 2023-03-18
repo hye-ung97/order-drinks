@@ -1,6 +1,7 @@
 package com.zerobase.order_drinks.model.dto;
 
 import com.zerobase.order_drinks.model.entity.MenuEntity;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ public class Menu {
 
     private String menuName;
     private int price;
+
 
     public MenuEntity toEntity(){
         return MenuEntity.builder()
