@@ -1,6 +1,7 @@
 package com.zerobase.order_drinks.controller;
 
 import com.zerobase.order_drinks.model.dto.Menu;
+import com.zerobase.order_drinks.model.dto.MenuInventory;
 import com.zerobase.order_drinks.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,5 +32,19 @@ public class MenuController {
     public ResponseEntity<?> menuList(final Pageable pageable){
         Page<Menu> menuList = this.menuService.menuList(pageable);
         return ResponseEntity.ok(menuList);
+    }
+
+    @PostMapping("/inventory")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> inventoryManagement(@RequestBody MenuInventory menuInventory){
+        var result = menuService.setInventory(menuInventory);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/inventory")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> inventoryList (Pageable pageable){
+        var result = menuService.getInventory(pageable);
+        return ResponseEntity.ok(result);
     }
 }

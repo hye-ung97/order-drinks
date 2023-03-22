@@ -25,4 +25,7 @@ public class MenuEntity {
 
     private LocalDateTime registerDateTime;
 
+    private LocalDateTime updateDateTime;
+
+    private int quantity;
 }

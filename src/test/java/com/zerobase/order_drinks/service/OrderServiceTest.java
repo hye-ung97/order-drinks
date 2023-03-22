@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.ignoreStubs;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -101,6 +102,34 @@ class OrderServiceTest {
 
         //then
         assertEquals(NOT_FOUND_STORE_DATA, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("음료 주문 - 실패 - 재고 없음")
+    void orderReceiptFailOutOfStock(){
+        //given
+        Order order = new Order();
+        order.setItem("아메리카노");
+        order.setPay(Pay.CARD);
+        order.setStoreName("스타벅스");
+        order.setQuantity(2);
+
+        MenuEntity menu = MenuEntity.builder()
+                .price(4100)
+                .menuName("아메리카노")
+                .registerDateTime(LocalDateTime.now())
+                .quantity(1)
+                .build();
+
+        given(menuRepository.findByMenuName(anyString())).willReturn(Optional.ofNullable(menu));
+        given(storeRepository.existsByStoreName(anyString())).willReturn(true);
+
+        //when
+        CustomException exception = assertThrows(CustomException.class,
+                () -> orderService.orderReceipt(order, "user@naver.com"));
+
+        //then
+        assertEquals(OUT_OF_STOCK, exception.getErrorCode());
     }
 
     @Test
@@ -205,16 +234,18 @@ class OrderServiceTest {
         order.setStoreName("스타벅스");
         order.setQuantity(2);
 
-        given(menuRepository.findByMenuName(anyString())).willReturn(Optional.of(MenuEntity.builder()
-                        .menuName("아메리카노")
-                        .price(4100)
-                        .registerDateTime(LocalDateTime.now())
-                .build()));
+        MenuEntity menu = MenuEntity.builder()
+                .menuName("아메리카노")
+                .price(4100)
+                .quantity(5)
+                .registerDateTime(LocalDateTime.now())
+                .build();
+
+        given(menuRepository.findByMenuName(anyString())).willReturn(Optional.of(menu));
 
         given(memberRepository.findByUsername(anyString())).willReturn(Optional.of(member));
 
         given(storeRepository.existsByStoreName(anyString())).willReturn(true);
-
 
         given(listOrderRepository.save(any())).willReturn(ListOrderEntity.builder()
                 .pay(Pay.CARD)
@@ -234,6 +265,7 @@ class OrderServiceTest {
         //then
 
         assertEquals(8200, orderReceipt.getTotalPrice());
+        assertEquals(3, menu.getQuantity());
     }
 
     @Test

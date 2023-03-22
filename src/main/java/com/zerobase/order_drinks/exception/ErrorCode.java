@@ -21,6 +21,7 @@ public enum ErrorCode {
 
     EXIST_MENU("이미 존재하는 음료입니다."),
     NOT_EXIST_MENU("존재하지 않는 음료입니다."),
+    OUT_OF_STOCK("재고가 부족합니다."),
     NOT_EXIST_MENU_LIST("메뉴 리스트가 없습니다."),
     NOT_EXIST_ORDER_LIST("요청하신 주문 리스트는 없습니다."),
 
