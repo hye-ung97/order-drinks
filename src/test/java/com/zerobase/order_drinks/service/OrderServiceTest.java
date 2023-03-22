@@ -145,6 +145,7 @@ class OrderServiceTest {
         MenuEntity menu = MenuEntity.builder()
                 .price(4100)
                 .menuName("아메리카노")
+                .quantity(10)
                 .registerDateTime(LocalDateTime.now())
                 .build();
 
@@ -184,6 +185,7 @@ class OrderServiceTest {
         MenuEntity menu = MenuEntity.builder()
                 .price(4100)
                 .menuName("아메리카노")
+                .quantity(10)
                 .registerDateTime(LocalDateTime.now())
                 .build();
 
@@ -294,6 +296,7 @@ class OrderServiceTest {
         given(menuRepository.findByMenuName(anyString())).willReturn(Optional.of(MenuEntity.builder()
                 .menuName("아메리카노")
                 .price(4100)
+                .quantity(10)
                 .registerDateTime(LocalDateTime.now())
                 .build()));
 
@@ -347,6 +350,7 @@ class OrderServiceTest {
         given(menuRepository.findByMenuName(anyString())).willReturn(Optional.of(MenuEntity.builder()
                 .menuName("아메리카노")
                 .price(4100)
+                .quantity(10)
                 .registerDateTime(LocalDateTime.now())
                 .build()));
 
