@@ -9,6 +9,9 @@ import com.zerobase.order_drinks.model.dto.OrderBillDto;
 import com.zerobase.order_drinks.model.dto.StoreGroupDto;
 import com.zerobase.order_drinks.model.dto.StoreOrderBillDto;
 import com.zerobase.order_drinks.model.entity.ListOrderEntity;
+import com.zerobase.order_drinks.model.entity.MemberEntity;
+import com.zerobase.order_drinks.model.entity.MenuEntity;
+import com.zerobase.order_drinks.notification.NotificationService;
 import com.zerobase.order_drinks.repository.ListOrderRepository;
 import com.zerobase.order_drinks.repository.MemberRepository;
 import com.zerobase.order_drinks.repository.MenuRepository;
@@ -21,6 +24,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.zerobase.order_drinks.exception.ErrorCode.*;
 
@@ -32,6 +37,7 @@ public class OrderService {
     private final MemberRepository memberRepository;
     private final ListOrderRepository listOrderRepository;
     private final StoreRepository storeRepository;
+    private final NotificationService notificationService;
 
     private final int pointToCoupon = 12;
 
@@ -41,6 +47,10 @@ public class OrderService {
 
         if(!storeRepository.existsByStoreName(order.getStoreName())){
             throw new CustomException(NOT_FOUND_STORE_DATA);
+        }
+        if(menu.getQuantity() < order.getQuantity()){
+            outOfStockAlert(menu);
+            throw new CustomException(OUT_OF_STOCK);
         }
 
         int price = menu.getPrice() * order.getQuantity();
@@ -77,7 +87,20 @@ public class OrderService {
         memberRepository.save(user);
         var result = listOrderRepository.save(order.toEntity(price, userName));
 
+        menu.setQuantity(menu.getQuantity() - order.getQuantity());
+        menuRepository.save(menu);
         return new OrderBillDto().toDto(result);
+    }
+
+    //모든 admin 에게 알림
+    public List<MemberEntity> outOfStockAlert(MenuEntity menu){
+        List<MemberEntity> list = memberRepository.findAll();
+        var result = list.stream().filter(n -> n.getRoles().contains("ROLE_ADMIN")).collect(Collectors.toList());
+        for(MemberEntity admin : result){
+            String receiver = admin.getUsername();
+            notificationService.send(receiver, menu.getMenuName() + " 재고가 부족합니다.", menu.getQuantity());
+        }
+        return result;
     }
 
     public Page<ListOrderEntity> checkStatus(OrderStatus status, Pageable pageable) {
