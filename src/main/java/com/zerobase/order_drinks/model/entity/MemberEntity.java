@@ -58,7 +58,8 @@ public class MemberEntity implements UserDetails {
     private Wallet.Coupon coupon;
 
 
-
+    @OneToMany(mappedBy = "userName")
+    private List<ListOrderEntity> listOrder;
 
     @Override
     @JsonIgnore
