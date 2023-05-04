@@ -24,7 +24,9 @@ public class ListOrderEntity {
     private int no;
 
     @Schema(description = "주문자", example = "abc@naver.com")
-    private String userName;
+    @ManyToOne
+    @JoinColumn(name = "user_name")
+    private MemberEntity userName;
 
     @Schema(description = "주문 시간")
     private LocalDateTime orderDateTime;
@@ -35,7 +37,9 @@ public class ListOrderEntity {
     @Schema(description = "주문 금액", example = "4100")
     private int price;
     @Schema(description = "주문 지점", example = "스타벅스 역삼대로점")
-    private String store;
+    @ManyToOne
+    @JoinColumn(name = "store")
+    private StoreEntity store;
 
     @Enumerated(EnumType.STRING)
     @Schema(description = "주문 상태", example = "ING")

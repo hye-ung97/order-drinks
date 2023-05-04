@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.util.List;
+
 @Builder
 @Data
 @NoArgsConstructor
@@ -23,5 +25,8 @@ public class StoreEntity {
     private String storeName;
     @Schema(description = "지점 주소", example = "대한민국 서울특별시 강남구 테헤란로 211")
     private String address;
+
+    @OneToMany(mappedBy = "store")
+    private List<ListOrderEntity> list;
 
 }

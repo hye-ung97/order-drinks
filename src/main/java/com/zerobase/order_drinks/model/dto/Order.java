@@ -3,6 +3,8 @@ package com.zerobase.order_drinks.model.dto;
 import com.zerobase.order_drinks.model.constants.OrderStatus;
 import com.zerobase.order_drinks.model.constants.Pay;
 import com.zerobase.order_drinks.model.entity.ListOrderEntity;
+import com.zerobase.order_drinks.model.entity.MemberEntity;
+import com.zerobase.order_drinks.model.entity.StoreEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -20,13 +22,13 @@ public class Order {
     @Schema(description = "결제 수단", example = "CARD")
     private Pay pay;
 
-    public ListOrderEntity toEntity(int price, String userName){
+    public ListOrderEntity toEntity(int price, MemberEntity member, StoreEntity store){
         return ListOrderEntity.builder()
                 .menu(this.item)
-                .store(this.storeName)
+                .store(store)
                 .price(price)
                 .quantity(this.quantity)
-                .userName(userName)
+                .userName(member)
                 .orderStatus(OrderStatus.ING)
                 .orderDateTime(LocalDateTime.now())
                 .pay(this.getPay())

@@ -33,7 +33,7 @@ public class OrderBillDto {
         orderComplete.setItem(listOrder.getMenu());
         orderComplete.setQuantity(listOrder.getQuantity());
         orderComplete.setTotalPrice(listOrder.getPrice());
-        orderComplete.setStoreName(listOrder.getStore());
+        orderComplete.setStoreName(listOrder.getStore().getStoreName());
         orderComplete.setStatus(listOrder.getOrderStatus());
         return orderComplete;
     }

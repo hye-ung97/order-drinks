@@ -104,7 +104,7 @@ public class OrderController {
     @PutMapping("/status-change") //음료 상태 변경
     public ResponseEntity<?> orderStatusChange(@RequestParam int orderNo){
         var result = orderService.changeOrderStatus(orderNo);
-        notificationService.send(result.getUserName(), "Your drink is ready!! Pick up please :)", orderNo);
+        notificationService.send(result.getUserName().getUsername(), "Your drink is ready!! Pick up please :)", orderNo);
         return ResponseEntity.ok(result);
     }
 
