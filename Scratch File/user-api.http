@@ -1,0 +1,31 @@
+### register
+POST http://localhost:8080/auth/signup
+Content-Type: application/json
+
+{
+  "username" : "abc123@naver.com",
+  "password" : "grace1234!",
+  "roles" : ["ROLE_USER", "ROLE_ADMIN"]
+}
+
+### email auth
+GET http://localhost:8080/auth/email-auth?id=003fcd76-f758-4634-add8-3df337345841
+
+### login
+POST http://localhost:8080/auth/signin
+Content-Type: application/json
+
+{
+  "username" : "hysung714@naver.com",
+  "password" : "grace1234!"
+}
+
+### wallet
+GET http://localhost:8080/member/wallet
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTM1MDQsImV4cCI6MTY4MzI1NzEwNH0._bCYAGu099MHEQzMkUa8I6pdzoD4b1mJ1cS7Pd0GXgzwdBTD707DJYHig1OaL6Th56NOqbzfJEQefmnAuFRj-g
+
+### charge
+PUT http://localhost:8080/member/charge?price=100
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTM1MDQsImV4cCI6MTY4MzI1NzEwNH0._bCYAGu099MHEQzMkUa8I6pdzoD4b1mJ1cS7Pd0GXgzwdBTD707DJYHig1OaL6Th56NOqbzfJEQefmnAuFRj-g
