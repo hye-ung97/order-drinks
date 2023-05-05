@@ -147,6 +147,9 @@ public class OrderService {
 
     public Page<OrderBillDto> getUserOrderList(String userName, Pageable pageable) {
         MemberEntity user = getUser(userName);
+        if(user.getListOrder().isEmpty()){
+            throw new CustomException(NOT_EXIST_ORDER_LIST);
+        }
 
         List<OrderBillDto> orderBillDto = user.getListOrder().stream()
                 .map(m -> new OrderBillDto().toDto(m)).toList();
@@ -174,6 +177,9 @@ public class OrderService {
 
     public Page<StoreGroup> getEachStoreSalesPrice(LocalDate startDate, LocalDate endDate, Pageable pageable){
         Page<StoreEntity> stores = storeRepository.findAll(pageable);
+        if(stores.isEmpty()){
+            throw new CustomException(NOT_EXIST_STORE_SALES_DATA);
+        }
         List<StoreGroup> storeGroupList = new ArrayList<>();
 
         for(StoreEntity store : stores){

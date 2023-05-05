@@ -6,11 +6,7 @@ import com.zerobase.order_drinks.model.constants.OrderStatus;
 import com.zerobase.order_drinks.model.constants.Pay;
 import com.zerobase.order_drinks.model.dto.Order;
 import com.zerobase.order_drinks.model.dto.OrderBillDto;
-import com.zerobase.order_drinks.model.dto.StoreGroupDto;
-import com.zerobase.order_drinks.model.entity.ListOrderEntity;
-import com.zerobase.order_drinks.model.entity.MemberEntity;
-import com.zerobase.order_drinks.model.entity.MenuEntity;
-import com.zerobase.order_drinks.model.entity.Wallet;
+import com.zerobase.order_drinks.model.entity.*;
 import com.zerobase.order_drinks.repository.ListOrderRepository;
 import com.zerobase.order_drinks.repository.MemberRepository;
 import com.zerobase.order_drinks.repository.MenuRepository;
@@ -30,7 +26,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.zerobase.order_drinks.exception.ErrorCode.*;
 import static com.zerobase.order_drinks.model.constants.OrderStatus.COMPLETE;
@@ -38,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.ignoreStubs;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -94,7 +88,7 @@ class OrderServiceTest {
                 .build();
 
         given(menuRepository.findByMenuName(anyString())).willReturn(Optional.of(menu));
-        given(storeRepository.existsByStoreName(anyString())).willReturn(false);
+        given(storeRepository.findByStoreName(anyString())).willThrow(new CustomException(NOT_FOUND_STORE_DATA));
 
         //when
         CustomException exception = assertThrows(CustomException.class,
@@ -121,8 +115,13 @@ class OrderServiceTest {
                 .quantity(1)
                 .build();
 
+        StoreEntity store = StoreEntity.builder()
+                .storeId(1)
+                .storeName("스타벅스1")
+                .build();
+
         given(menuRepository.findByMenuName(anyString())).willReturn(Optional.ofNullable(menu));
-        given(storeRepository.existsByStoreName(anyString())).willReturn(true);
+        given(storeRepository.findByStoreName(anyString())).willReturn(Optional.ofNullable(store));
 
         //when
         CustomException exception = assertThrows(CustomException.class,
@@ -161,9 +160,14 @@ class OrderServiceTest {
                 .build();
         member.getCard().setPrice(4100);
 
+        StoreEntity store = StoreEntity.builder()
+                .storeId(1)
+                .storeName("스타벅스1")
+                .build();
+
         given(menuRepository.findByMenuName(anyString())).willReturn(Optional.of(menu));
-        given(storeRepository.existsByStoreName(anyString())).willReturn(true);
         given(memberRepository.findByUsername(anyString())).willReturn(Optional.of(member));
+        given(storeRepository.findByStoreName(anyString())).willReturn(Optional.ofNullable(store));
 
         //when
         CustomException exception = assertThrows(CustomException.class,
@@ -201,8 +205,13 @@ class OrderServiceTest {
                 .build();
         member.getCoupon().setCount(0);
 
+        StoreEntity store = StoreEntity.builder()
+                .storeId(1)
+                .storeName("스타벅스1")
+                .build();
+
         given(menuRepository.findByMenuName(anyString())).willReturn(Optional.of(menu));
-        given(storeRepository.existsByStoreName(anyString())).willReturn(true);
+        given(storeRepository.findByStoreName(anyString())).willReturn(Optional.ofNullable(store));
         given(memberRepository.findByUsername(anyString())).willReturn(Optional.of(member));
 
         //when
@@ -226,6 +235,7 @@ class OrderServiceTest {
                 .card(new Wallet.Card())
                 .coupon(new Wallet.Coupon())
                 .point(new Wallet.Point())
+                .listOrder(new ArrayList<>())
                 .build();
 
         member.getCard().setPrice(10000);
@@ -247,27 +257,27 @@ class OrderServiceTest {
 
         given(memberRepository.findByUsername(anyString())).willReturn(Optional.of(member));
 
-        given(storeRepository.existsByStoreName(anyString())).willReturn(true);
+        given(storeRepository.findByStoreName(anyString())).willReturn(Optional.ofNullable(StoreEntity.builder()
+                        .storeName("스타벅스1").build()));
 
         given(listOrderRepository.save(any())).willReturn(ListOrderEntity.builder()
                 .pay(Pay.CARD)
                 .orderDateTime(LocalDateTime.now())
                 .quantity(2)
-                .userName(member.getUsername())
+                .userName(member)
                 .orderCompleteDateTime(null)
                 .orderStatus(OrderStatus.ING)
                 .price(8200)
-                .store("스타벅스")
+                .store(StoreEntity.builder().storeId(1).storeName("스타벅스1").build())
         .build());
 
         //when
-
         OrderBillDto orderReceipt = orderService.orderReceipt(order, member.getUsername());
 
         //then
-
         assertEquals(8200, orderReceipt.getTotalPrice());
         assertEquals(3, menu.getQuantity());
+        assertEquals("스타벅스1", orderReceipt.getStoreName());
     }
 
     @Test
@@ -283,6 +293,7 @@ class OrderServiceTest {
                 .card(new Wallet.Card())
                 .coupon(new Wallet.Coupon())
                 .point(new Wallet.Point())
+                .listOrder(new ArrayList<>())
                 .build();
 
         member.getCard().setPrice(10000);
@@ -302,18 +313,18 @@ class OrderServiceTest {
 
         given(memberRepository.findByUsername(anyString())).willReturn(Optional.of(member));
 
-        given(storeRepository.existsByStoreName(anyString())).willReturn(true);
-
+        given(storeRepository.findByStoreName(anyString())).willReturn(Optional.ofNullable(StoreEntity.builder()
+                .storeName("스타벅스1").build()));
 
         given(listOrderRepository.save(any())).willReturn(ListOrderEntity.builder()
                 .pay(Pay.CARD)
                 .orderDateTime(LocalDateTime.now())
                 .quantity(2)
-                .userName(member.getUsername())
+                .userName(member)
                 .orderCompleteDateTime(null)
                 .orderStatus(OrderStatus.ING)
                 .price(8200)
-                .store("스타벅스")
+                .store(StoreEntity.builder().storeId(1).storeName("스타벅스1").build())
                 .build());
 
         //when
@@ -335,6 +346,7 @@ class OrderServiceTest {
                 .card(new Wallet.Card())
                 .coupon(new Wallet.Coupon())
                 .point(new Wallet.Point())
+                .listOrder(new ArrayList<>())
                 .build();
 
         member.getCard().setPrice(100000);
@@ -356,17 +368,18 @@ class OrderServiceTest {
 
         given(memberRepository.findByUsername(anyString())).willReturn(Optional.of(member));
 
-        given(storeRepository.existsByStoreName(anyString())).willReturn(true);
+        given(storeRepository.findByStoreName(anyString())).willReturn(Optional.ofNullable(StoreEntity.builder()
+                .storeName("스타벅스1").build()));
 
         given(listOrderRepository.save(any())).willReturn(ListOrderEntity.builder()
                 .pay(Pay.CARD)
                 .orderDateTime(LocalDateTime.now())
                 .quantity(2)
-                .userName(member.getUsername())
+                .userName(member)
                 .orderCompleteDateTime(null)
                 .orderStatus(OrderStatus.ING)
                 .price(8200)
-                .store("스타벅스")
+                .store(StoreEntity.builder().storeId(1).storeName("스타벅스1").build())
                 .build());
 
         //when
@@ -413,10 +426,10 @@ class OrderServiceTest {
         //given
         ListOrderEntity listOrder = ListOrderEntity.builder()
                 .no(1)
-                .userName("user@naver.com")
+                .userName(MemberEntity.builder().id(1L).username("test1").build())
                 .orderStatus(COMPLETE)
                 .price(4100)
-                .store("스타벅스")
+                .store(StoreEntity.builder().storeId(1).storeName("스타벅스1").build())
                 .orderDateTime(LocalDateTime.now())
                 .pay(Pay.CARD)
                 .quantity(1)
@@ -442,10 +455,10 @@ class OrderServiceTest {
 
         ListOrderEntity listOrder = ListOrderEntity.builder()
                 .no(1)
-                .userName("user@naver.com")
+                .userName(MemberEntity.builder().id(1L).username("test1").build())
                 .orderStatus(OrderStatus.ING)
                 .price(4100)
-                .store("스타벅스")
+                .store(StoreEntity.builder().storeId(1).storeName("스타벅스1").build())
                 .orderDateTime(LocalDateTime.now())
                 .pay(Pay.CARD)
                 .quantity(1)
@@ -457,11 +470,9 @@ class OrderServiceTest {
         given(listOrderRepository.findById(anyInt())).willReturn(Optional.ofNullable(listOrder));
 
         //when
-
         var result = orderService.changeOrderStatus(1);
 
         //then
-
         assertEquals(COMPLETE, result.getOrderStatus());
     }
 
@@ -486,10 +497,10 @@ class OrderServiceTest {
         //given
         ListOrderEntity listOrder = ListOrderEntity.builder()
                 .no(1)
-                .userName("user@naver.com")
+                .userName(MemberEntity.builder().username("test1").build())
                 .orderStatus(OrderStatus.ING)
                 .price(4100)
-                .store("스타벅스")
+                .store(StoreEntity.builder().storeId(1).storeName("스타벅스1").build())
                 .orderDateTime(LocalDateTime.now())
                 .pay(Pay.CARD)
                 .quantity(1)
@@ -526,14 +537,14 @@ class OrderServiceTest {
                 .card(new Wallet.Card())
                 .coupon(new Wallet.Coupon())
                 .point(new Wallet.Point())
+                .listOrder(new ArrayList<>())
                 .build();
 
-        given(listOrderRepository.findByUserName(anyString(), any()))
-                .willReturn(Page.empty());
+        given(memberRepository.findByUsername(anyString())).willReturn(Optional.ofNullable(member));
 
         //when
         CustomException exception = assertThrows(CustomException.class,
-                () -> orderService.getUserOrderList(member.getUsername(),
+                () -> orderService.getUserOrderList("user@naver.com",
                 Pageable.ofSize(10)));
 
         //then
@@ -558,10 +569,10 @@ class OrderServiceTest {
 
         ListOrderEntity listOrder = ListOrderEntity.builder()
                 .no(1)
-                .userName("user@naver.com")
+                .userName(member)
                 .orderStatus(OrderStatus.ING)
                 .price(4100)
-                .store("스타벅스")
+                .store(StoreEntity.builder().storeId(1).storeName("스타벅스1").build())
                 .orderDateTime(LocalDateTime.now())
                 .pay(Pay.CARD)
                 .quantity(1)
@@ -569,25 +580,27 @@ class OrderServiceTest {
                 .orderCompleteDateTime(null)
                 .build();
 
-        List<ListOrderEntity> list = new ArrayList<>();
-        list.add(listOrder);
-        Page<ListOrderEntity> page = new PageImpl<>(list);
+        member.setListOrder(List.of(listOrder));
 
-        given(listOrderRepository.findByUserName(anyString(), any())).willReturn(page);
+        given(memberRepository.findByUsername(anyString())).willReturn(Optional.of(member));
 
         //when
-
         var result = orderService.getUserOrderList(member.getUsername(), Pageable.ofSize(10));
 
         //then
-        assertEquals(1, result.getSize());
+        assertEquals(1, result.getTotalElements());
     }
 
     @Test
     @DisplayName("지점의 매출, 주문 리스트 가져오기 - 실패")
     void getOrderListByStoreNameFail() {
         //given
-        given(storeRepository.existsByStoreName(anyString())).willReturn(false);
+        given(storeRepository.findByStoreName(anyString())).willReturn(
+                Optional.ofNullable(
+                        StoreEntity.builder()
+                                .storeName("스타벅스")
+                                .list(new ArrayList<>())
+                                .build()));
 
         //when
         CustomException exception = assertThrows(CustomException.class,
@@ -596,7 +609,7 @@ class OrderServiceTest {
                         Pageable.ofSize(10)));
 
         //then
-        assertEquals(NOT_FOUND_STORE_DATA, exception.getErrorCode());
+        assertEquals(NOT_EXIST_STORE_SALES_DATA, exception.getErrorCode());
     }
 
     @Test
@@ -605,10 +618,10 @@ class OrderServiceTest {
         //given
         ListOrderEntity listOrder = ListOrderEntity.builder()
                 .no(1)
-                .userName("user@naver.com")
+                .userName(MemberEntity.builder().username("Test1").build())
                 .orderStatus(OrderStatus.ING)
                 .price(4100)
-                .store("스타벅스")
+                .store(StoreEntity.builder().storeId(1).storeName("스타벅스1").build())
                 .orderDateTime(LocalDateTime.now())
                 .pay(Pay.CARD)
                 .quantity(1)
@@ -616,22 +629,22 @@ class OrderServiceTest {
                 .orderCompleteDateTime(null)
                 .build();
 
-        List<ListOrderEntity> list = new ArrayList<>();
-        list.add(listOrder);
-        Page<ListOrderEntity> page = new PageImpl<>(list);
 
-        given(listOrderRepository.findByStoreAndOrderDateTimeBetween(
-                anyString(), any(), any(), any())).willReturn(page);
-        given(storeRepository.existsByStoreName(anyString())).willReturn(true);
+        given(storeRepository.findByStoreName(anyString())).willReturn(
+                Optional.ofNullable(
+                        StoreEntity.builder()
+                                .storeName("스타벅스1")
+                                .list(List.of(listOrder))
+                                .build()));
 
         //when
-        var result = orderService.getOrderListByStoreName(listOrder.getStore(),
-                LocalDate.parse("2023-03-01"), LocalDate.parse("2023-03-31"),
+        var result = orderService.getOrderListByStoreName(listOrder.getStore().getStoreName(),
+                LocalDate.parse("2023-05-01"), LocalDate.parse("2023-05-31"),
                 Pageable.ofSize(10));
 
         //then
         assertEquals(4100, result.getSum());
-        assertEquals(1, result.getOrderList().getSize());
+        assertEquals(1, result.getOrderList().getTotalElements());
 
     }
 
@@ -639,7 +652,9 @@ class OrderServiceTest {
     @DisplayName("전체 지점의 매출 가져오기 - 없음")
     void getEachStoreSalesPriceFail() {
         //given
-        given(listOrderRepository.findByStoreGroupSalesPrice(any(), any(), any())).willReturn(Page.empty());
+        Page<StoreEntity> list = new PageImpl<>(List.of());
+        given(storeRepository.findAll(any(Pageable.class))).willReturn(list);
+
         //when
         CustomException exception = assertThrows(CustomException.class,
                 () -> orderService.getEachStoreSalesPrice(
@@ -654,48 +669,54 @@ class OrderServiceTest {
     @DisplayName("전체 지점의 매출 가져오기 - 성공")
     void getEachStoreSalesPriceSuccess() {
         //given
-        StoreGroupDto storeGroupDto = new StoreGroupDto() {
-            @Override
-            public String getStoreName() {
-                return "스타벅스 1";
-            }
+        ListOrderEntity listOrder1 = ListOrderEntity.builder()
+                .no(1)
+                .userName(MemberEntity.builder().username("test1").build())
+                .orderStatus(OrderStatus.ING)
+                .price(4100)
+                .store(StoreEntity.builder().storeId(1).storeName("스타벅스1").build())
+                .orderDateTime(LocalDateTime.now())
+                .pay(Pay.CARD)
+                .quantity(1)
+                .menu("아메리카노")
+                .orderCompleteDateTime(null)
+                .build();
 
-            @Override
-            public long getTotalPrice() {
-                return 50000;
-            }
-        };
+        ListOrderEntity listOrder2 = ListOrderEntity.builder()
+                .no(1)
+                .userName(MemberEntity.builder().username("test2").build())
+                .orderStatus(OrderStatus.ING)
+                .price(4100)
+                .store(StoreEntity.builder().storeId(1).storeName("스타벅스2").build())
+                .orderDateTime(LocalDateTime.now())
+                .pay(Pay.CARD)
+                .quantity(1)
+                .menu("아메리카노")
+                .orderCompleteDateTime(null)
+                .build();
 
-        StoreGroupDto storeGroupDto2 = new StoreGroupDto() {
-            @Override
-            public String getStoreName() {
-                return "스타벅스 2";
-            }
+        Page<StoreEntity> page = new PageImpl<>(List.of(
+                StoreEntity.builder()
+                        .storeName("스타벅스1")
+                        .list(List.of(listOrder1))
+                        .build(),
+                StoreEntity.builder()
+                        .storeName("스타벅스2")
+                        .list(List.of(listOrder2))
+                        .build()
+                ));
 
-            @Override
-            public long getTotalPrice() {
-                return 90000;
-            }
-        };
-
-        List<StoreGroupDto> list = new ArrayList<>();
-        list.add(storeGroupDto);
-        list.add(storeGroupDto2);
-        Page<StoreGroupDto> page = new PageImpl<>(list);
-
-        given(listOrderRepository.findByStoreGroupSalesPrice(any(), any(), any()))
-                .willReturn(page);
+        given(storeRepository.findAll(any(Pageable.class))).willReturn(page);
 
         //when
         var result = orderService.getEachStoreSalesPrice(
-                LocalDate.parse("2023-03-01"), LocalDate.parse("2023-03-02"),
+                LocalDate.parse("2023-05-01"), LocalDate.parse("2023-06-02"),
                 Pageable.ofSize(10));
 
         //then
-        List<StoreGroupDto> groupList = result.get().collect(Collectors.toList());
-        assertEquals(50000, groupList.get(0).getTotalPrice());
-        assertEquals("스타벅스 1", groupList.get(0).getStoreName());
-        assertEquals(90000, groupList.get(1).getTotalPrice());
-        assertEquals("스타벅스 2", groupList.get(1).getStoreName());
+        assertEquals(4100, result.get().toList().get(0).getTotalPrice());
+        assertEquals("스타벅스1", result.get().toList().get(0).getStoreName());
+        assertEquals(4100, result.get().toList().get(1).getTotalPrice());
+        assertEquals("스타벅스2", result.get().toList().get(1).getStoreName());
     }
 }

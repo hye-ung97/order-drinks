@@ -1,12 +1,10 @@
 package com.zerobase.order_drinks.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zerobase.order_drinks.exception.CustomException;
 import com.zerobase.order_drinks.exception.ErrorCode;
 import com.zerobase.order_drinks.model.dto.Menu;
 import com.zerobase.order_drinks.model.dto.MenuInventory;
-import com.zerobase.order_drinks.model.entity.MenuEntity;
 import com.zerobase.order_drinks.security.SecurityConfiguration;
 import com.zerobase.order_drinks.security.TokenProvider;
 import com.zerobase.order_drinks.service.MenuService;
@@ -22,14 +20,12 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -64,7 +60,7 @@ class MenuControllerTest {
         //when
         //then
         mockMvc.perform(post("/menu/register").with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON_UTF8)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(menu)))
                 .andExpect(jsonPath("$.code")
                         .value("EXIST_MENU"))
@@ -84,7 +80,7 @@ class MenuControllerTest {
         //when
         //then
         mockMvc.perform(post("/menu/register").with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON_UTF8)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(menu)))
                 .andExpect(jsonPath("$.price")
                         .value(4100))
@@ -106,7 +102,7 @@ class MenuControllerTest {
 
         //then
         mockMvc.perform(get("/menu/list").with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.code")
                         .value("NOT_EXIST_MENU_LIST"))
                 .andExpect(status().isOk());
@@ -133,7 +129,7 @@ class MenuControllerTest {
 
         List<Menu> menuList = List.of(menu1, menu2);
 
-        Page<Menu> page = new PageImpl<Menu>(menuList, pageable, 10);
+        Page<Menu> page = new PageImpl<>(menuList, pageable, 10);
 
         given(menuService.menuList(any())).willReturn(page);
 
@@ -163,17 +159,12 @@ class MenuControllerTest {
                 .quantity(5)
                 .build();
 
-        MenuEntity menu = MenuEntity.builder()
-                .menuName("아메리카노")
-                .quantity(1)
-                .build();
-
         given(menuService.setInventory(any()))
                 .willThrow(new CustomException(ErrorCode.NOT_EXIST_MENU));
 
         //when
         //then
-        mockMvc.perform(post("/menu/inventory").with(csrf())
+        mockMvc.perform(put("/menu/inventory").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(inventory)))
                 .andExpect(jsonPath("$.code").value("NOT_EXIST_MENU"))
@@ -190,18 +181,13 @@ class MenuControllerTest {
                 .quantity(5)
                 .build();
 
-        MenuEntity menu = MenuEntity.builder()
-                .menuName("아메리카노")
-                .quantity(1)
-                .build();
-
         given(menuService.setInventory(any())).willReturn(MenuInventory.builder()
                         .quantity(6)
                         .menuName("아메리카노")
                 .build());
         //when
         //then
-        mockMvc.perform(post("/menu/inventory").with(csrf())
+        mockMvc.perform(put("/menu/inventory").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(inventory)))
                 .andExpect(jsonPath("$.menuName").value("아메리카노"))
@@ -228,12 +214,6 @@ class MenuControllerTest {
     @DisplayName("재고리스트 가져오기 - 성공")
     void inventoryListSuccess() throws Exception {
         //given
-        int pageNumber = 0;
-        int pageSize = 10;
-        String sortBy = "name";
-        Sort sort = Sort.by(sortBy).ascending();
-        PageRequest pageable = PageRequest.of(pageNumber, pageSize, sort);
-
         List<MenuInventory> menuEntityList = List.of(
                 MenuInventory.builder()
                         .menuName("아메리카노")

@@ -35,8 +35,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -257,7 +256,7 @@ class OrderControllerTest {
 
         //when
         //then
-        mockMvc.perform(get("/order/status-change").with(csrf())
+        mockMvc.perform(put("/order/status-change").with(csrf())
                         .param("orderNo", "1"))
                 .andExpect(jsonPath("$.code")
                         .value("ALREADY_FINISHED_DRINK"))
@@ -277,13 +276,14 @@ class OrderControllerTest {
                                         .menu("아메리카노")
                                         .quantity(1)
                                         .userName("user1")
+                                        .store("스타벅스1")
                                         .build();
 
         given(orderService.changeOrderStatus(anyInt())).willReturn(entity);
 
         //when
         //then
-        mockMvc.perform(get("/order/status-change").with(csrf())
+        mockMvc.perform(put("/order/status-change").with(csrf())
                         .param("orderNo", "1"))
                 .andExpect(jsonPath("$.orderStatus").value(OrderStatus.COMPLETE.toString()))
                 .andExpect(jsonPath("$.userName").value("user1"))
@@ -495,16 +495,17 @@ class OrderControllerTest {
         //when
         //then
         mockMvc.perform(get("/order/list-each").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
                         .param("startDate", "2023-03-01")
                         .param("endDate", "2023-03-31"))
                 .andExpect(jsonPath("$.content[0].totalPrice")
                         .value(4100))
                 .andExpect(jsonPath("$.content[0].storeName")
-                        .value("스타벅스1"))
+                        .value("스타벅스 1"))
                 .andExpect(jsonPath("$.content[1].totalPrice")
-                        .value(8200))
+                        .value(41000))
                 .andExpect(jsonPath("$.content[1].storeName")
-                        .value("스타벅스2"))
+                        .value("스타벅스 2"))
                 .andExpect(status().isOk());
     }
 }
