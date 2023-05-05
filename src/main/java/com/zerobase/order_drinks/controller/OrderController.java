@@ -155,7 +155,7 @@ public class OrderController {
     @Operation(summary = "각각의 지점별 판매 금액 보기(기간별)", description = "각각의 지점별 판매 금액 보기(기간별)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공",
-                    content = @Content(schema = @Schema(implementation = StoreGroupDto.class))),
+                    content = @Content(schema = @Schema(implementation = StoreGroup.class))),
             @ApiResponse(responseCode = "NOT_EXIST_STORE_SALES_DATA",
                     description = "요청하신 지점별 매출 리스트가 없습니다.",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
