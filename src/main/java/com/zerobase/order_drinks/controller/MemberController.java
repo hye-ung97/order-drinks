@@ -46,10 +46,8 @@ public class MemberController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/wallet")
-    public ResponseEntity<?> getWallet(@AuthenticationPrincipal UserDetails user){
-        var result = memberService.getWallet(user.getUsername());
-
-        return ResponseEntity.ok(result);
+    public ResponseEntity<Wallet> getWallet(@AuthenticationPrincipal UserDetails user){
+        return ResponseEntity.ok(memberService.getWallet(user.getUsername()));
     }
 
     @Operation(summary = "카드 충전", description = "사용자의 카드 금액 충전")
@@ -62,9 +60,8 @@ public class MemberController {
     })
     @Parameter(name = "price", description = "충전 금액", example = "1000")
     @PutMapping("/charge")
-    public ResponseEntity<?> charge(@RequestParam("price") int price, @AuthenticationPrincipal UserDetails user){
-        var result = memberService.cardCharge(price, user.getUsername());
-        return ResponseEntity.ok(result);
+    public ResponseEntity<Wallet.Card> charge(@RequestParam("price") int price, @AuthenticationPrincipal UserDetails user){
+        return ResponseEntity.ok(memberService.cardCharge(price, user.getUsername()));
     }
 
     @Operation(summary = "사용자의 주문 리스트", description = "사용자의 주문 리스트(주문 히스토리)")
@@ -75,10 +72,9 @@ public class MemberController {
                     description = "주문 리스트가 없습니다.",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    @GetMapping("/myOrder")
-    public ResponseEntity<?> getUserOrder(@AuthenticationPrincipal UserDetails user, Pageable pageable){
-        Page<OrderBillDto> result = orderService.getUserOrderList(user.getUsername(), pageable);
-        return ResponseEntity.ok(result);
+    @GetMapping("/my-order")
+    public ResponseEntity<Page<OrderBillDto>> getUserOrder(@AuthenticationPrincipal UserDetails user, Pageable pageable){
+        return ResponseEntity.ok(orderService.getUserOrderList(user.getUsername(), pageable));
     }
 
 }

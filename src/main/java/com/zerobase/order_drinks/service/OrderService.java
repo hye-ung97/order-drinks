@@ -4,10 +4,7 @@ package com.zerobase.order_drinks.service;
 import com.zerobase.order_drinks.exception.CustomException;
 import com.zerobase.order_drinks.model.constants.OrderStatus;
 import com.zerobase.order_drinks.model.constants.Pay;
-import com.zerobase.order_drinks.model.dto.Order;
-import com.zerobase.order_drinks.model.dto.OrderBillDto;
-import com.zerobase.order_drinks.model.dto.StoreGroupDto;
-import com.zerobase.order_drinks.model.dto.StoreOrderBillDto;
+import com.zerobase.order_drinks.model.dto.*;
 import com.zerobase.order_drinks.model.entity.ListOrderEntity;
 import com.zerobase.order_drinks.model.entity.MemberEntity;
 import com.zerobase.order_drinks.model.entity.MenuEntity;
@@ -20,11 +17,13 @@ import com.zerobase.order_drinks.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.zerobase.order_drinks.exception.ErrorCode.*;
@@ -41,6 +40,16 @@ public class OrderService {
 
     private final int pointToCoupon = 12;
 
+    private MemberEntity getUser(String userName) {
+        return memberRepository.findByUsername(userName)
+                .orElseThrow(() -> new CustomException(NOT_EXIST_USER));
+    }
+
+    private StoreEntity getStore(String storeName) {
+        return storeRepository.findByStoreName(storeName)
+                .orElseThrow(() -> new CustomException(NOT_FOUND_STORE_DATA));
+    }
+
     public OrderBillDto orderReceipt(Order order, String userName){
         var menu = menuRepository.findByMenuName(order.getItem())
                 .orElseThrow(() -> new CustomException(NOT_EXIST_MENU));
@@ -55,7 +64,7 @@ public class OrderService {
 
         int price = menu.getPrice() * order.getQuantity();
 
-        var user = memberRepository.findByUsername(userName).orElseThrow(() -> new CustomException(NOT_EXIST_USER));
+        MemberEntity user = getUser(userName);
 
         Pay payMethod = order.getPay();
 
@@ -84,8 +93,7 @@ public class OrderService {
             user.getCoupon().setCount(user.getCoupon().getCount() - 1);
         }
 
-        StoreEntity store = storeRepository.findByStoreName(order.getStoreName())
-                .orElseThrow(() -> new CustomException(NOT_FOUND_STORE_DATA));
+        StoreEntity store = getStore(order.getStoreName());
 
         var result = listOrderRepository.save(order.toEntity(price, user, store));
         List<ListOrderEntity> listOrder = user.getListOrder();
@@ -105,16 +113,16 @@ public class OrderService {
         result.stream().map(MemberEntity::getUsername).forEach(receiver -> notificationService.send(receiver, menu.getMenuName() + " 재고가 부족합니다.", menu.getQuantity()));
     }
 
-    public Page<ListOrderEntity> checkStatus(OrderStatus status, Pageable pageable) {
+    public Page<ListOrderDto> checkStatus(OrderStatus status, Pageable pageable) {
 
         Page<ListOrderEntity> listOrderEntityPage = listOrderRepository.findByOrderStatus(status, pageable);
         if(listOrderEntityPage.isEmpty()){
             throw new CustomException(NOT_EXIST_ORDER_LIST);
         }
-        return listOrderEntityPage;
+        return listOrderEntityPage.map(m -> new ListOrderDto().toDto(m));
     }
 
-    public ListOrderEntity changeOrderStatus(int orderNo) {
+    public ListOrderDto changeOrderStatus(int orderNo) {
         var orderStatus = listOrderRepository.findById(orderNo)
                 .orElseThrow(() -> new CustomException(NOT_EXIST_ORDER_LIST));
 
@@ -125,10 +133,10 @@ public class OrderService {
         orderStatus.setOrderStatus(OrderStatus.COMPLETE);
         orderStatus.setOrderCompleteDateTime(LocalDateTime.now());
 
-        return listOrderRepository.save(orderStatus);
+        return new ListOrderDto().toDto(listOrderRepository.save(orderStatus));
     }
 
-    public Page<ListOrderEntity> getOrderList(LocalDate start, LocalDate end, Pageable pageable) {
+    public Page<ListOrderDto> getOrderList(LocalDate start, LocalDate end, Pageable pageable) {
         Page<ListOrderEntity> result = listOrderRepository.findByOrderDateTimeBetween(
                 start.atTime(0, 0,0), end.atTime(23, 59,59),
                 pageable);
@@ -136,36 +144,63 @@ public class OrderService {
         if(result.isEmpty()){
             throw new CustomException(NOT_EXIST_ORDER_LIST);
         }
-
-        return result;
+        return result.map(m -> new ListOrderDto().toDto(m));
     }
 
     public Page<OrderBillDto> getUserOrderList(String userName, Pageable pageable) {
-        Page<ListOrderEntity> listOrderEntityPage = listOrderRepository.findByUserName(userName, pageable);
-        if(listOrderEntityPage.isEmpty()) throw new CustomException(NOT_EXIST_ORDER_LIST);
-        return listOrderEntityPage.map(m -> new OrderBillDto().toDto(m));
+        MemberEntity user = getUser(userName);
+
+        List<OrderBillDto> orderBillDto = user.getListOrder().stream()
+                .map(m -> new OrderBillDto().toDto(m)).toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), orderBillDto.size());
+
+        return new PageImpl<>(orderBillDto.subList(start, end), pageable, orderBillDto.size());
     }
 
-    public StoreOrderBillDto getOrderListByStoreName(String storeName, LocalDate startDate, LocalDate endDate, Pageable pageable) {
-        if(!storeRepository.existsByStoreName(storeName)){
-            throw new CustomException(NOT_FOUND_STORE_DATA);
-        }
+    public StoreOrderBillDto getOrderListByStoreName(
+            String storeName, LocalDate startDate, LocalDate endDate, Pageable pageable) {
 
-        Page<ListOrderEntity> result = listOrderRepository.findByStoreAndOrderDateTimeBetween(storeName,
-                startDate.atTime(0,0,0), endDate.atTime(23,59,59), pageable);
-        long sum = result.stream().mapToLong(ListOrderEntity::getPrice).sum();
+        StoreEntity store = getStore(storeName);
+        List<ListOrderDto> list = getFilterList(startDate, endDate, store);
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), list.size());
+        Page<ListOrderDto> page = new PageImpl<>(list.subList(start, end), pageable, list.size());
 
         StoreOrderBillDto storeOrderBillDto = new StoreOrderBillDto();
-        storeOrderBillDto.setSum(sum);
-        storeOrderBillDto.setOrderList(result);
+        storeOrderBillDto.setSum(getTotalPrice(page));
+        storeOrderBillDto.setOrderList(page);
         return storeOrderBillDto;
     }
 
-    public Page<StoreGroupDto> getEachStoreSalesPrice(LocalDate startDate, LocalDate endDate, Pageable pageable){
-        var result = listOrderRepository.findByStoreGroupSalesPrice(startDate, endDate, pageable);
-        if(result.isEmpty()){
+    public Page<StoreGroup> getEachStoreSalesPrice(LocalDate startDate, LocalDate endDate, Pageable pageable){
+        Page<StoreEntity> stores = storeRepository.findAll(pageable);
+        List<StoreGroup> storeGroupList = new ArrayList<>();
+
+        for(StoreEntity store : stores){
+            storeGroupList.add(StoreGroup.builder()
+                            .storeName(store.getStoreName())
+                            .totalPrice(getTotalPrice(new PageImpl<>(getFilterList(startDate, endDate, store))))
+                    .build());
+        }
+
+        return new PageImpl<>(storeGroupList);
+    }
+
+    private static long getTotalPrice(Page<ListOrderDto> page) {
+        return page.stream().mapToLong(ListOrderDto::getPrice).sum();
+    }
+
+    private static List<ListOrderDto> getFilterList(LocalDate startDate, LocalDate endDate, StoreEntity store) {
+        List<ListOrderEntity> filterData =  store.getList().stream()
+                .filter(m -> m.getOrderDateTime().isAfter(startDate.atTime(0, 0, 0)) &&
+                        m.getOrderDateTime().isBefore(endDate.atTime(23, 59, 59))).toList();
+
+        if(filterData.isEmpty()){
             throw new CustomException(NOT_EXIST_STORE_SALES_DATA);
         }
-        return result;
+        return filterData.stream().map(m -> new ListOrderDto().toDto(m)).toList();
     }
 }

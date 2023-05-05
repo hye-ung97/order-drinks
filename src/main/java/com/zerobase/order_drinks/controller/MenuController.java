@@ -36,8 +36,8 @@ public class MenuController {
     })
     @PostMapping("/register")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> menuRegister(@RequestBody Menu request){
-        var result = menuService.menuRegister(request);
+    public ResponseEntity<Menu> menuRegister(@RequestBody Menu request){
+        menuService.menuRegister(request);
         log.info("menu register -> " + request.getMenuName());
 
         return ResponseEntity.ok(request);
@@ -52,9 +52,8 @@ public class MenuController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/list")
-    public ResponseEntity<?> menuList(final Pageable pageable){
-        Page<Menu> menuList = this.menuService.menuList(pageable);
-        return ResponseEntity.ok(menuList);
+    public ResponseEntity<Page<Menu>> menuList(final Pageable pageable){
+        return ResponseEntity.ok(menuService.menuList(pageable));
     }
 
     @Operation(summary = "재고 관리", description = "재고 수정 가능(추가)")
@@ -67,9 +66,8 @@ public class MenuController {
     })
     @PutMapping("/inventory")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> inventoryManagement(@RequestBody MenuInventory menuInventory){
-        var result = menuService.setInventory(menuInventory);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<MenuInventory> inventoryManagement(@RequestBody MenuInventory menuInventory){
+        return ResponseEntity.ok(menuService.setInventory(menuInventory));
     }
 
     @Operation(summary = "재고 리스트", description = "재고 리스트")
@@ -82,8 +80,7 @@ public class MenuController {
     })
     @GetMapping("/inventory")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> inventoryList (Pageable pageable){
-        var result = menuService.getInventory(pageable);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<Page<MenuInventory>> inventoryList (Pageable pageable){
+        return ResponseEntity.ok(menuService.getInventory(pageable));
     }
 }

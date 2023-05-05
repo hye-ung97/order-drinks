@@ -1,0 +1,34 @@
+### find store
+GET http://localhost:8080/order/find-store?address=경기도 의정부시 의정로 202번길 10
+
+### order
+POST http://localhost:8080/order
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTQwMjksImV4cCI6MTY4MzI1NzYyOX0.-PimZzkiOj-ZU3eA-qgN6v_ONtePunnqmJesvLM7u34EIK7Ok11S2iAh90RFq4ciY4PREoqUs3dcRfSBouzLcw
+
+{
+  "item": "아메리카노",
+  "quantity": 1,
+  "storeName": "스타벅스 의정부공원점",
+  "pay": "CARD"
+}
+
+### change status order
+PUT http://localhost:8080/order/status-change?orderNo=6
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTQwMjksImV4cCI6MTY4MzI1NzYyOX0.-PimZzkiOj-ZU3eA-qgN6v_ONtePunnqmJesvLM7u34EIK7Ok11S2iAh90RFq4ciY4PREoqUs3dcRfSBouzLcw
+
+### order list
+GET http://localhost:8080/order/list?startDate=2023-05-01&endDate=2023-05-15
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTQwMjksImV4cCI6MTY4MzI1NzYyOX0.-PimZzkiOj-ZU3eA-qgN6v_ONtePunnqmJesvLM7u34EIK7Ok11S2iAh90RFq4ciY4PREoqUs3dcRfSBouzLcw
+
+### order list status
+GET http://localhost:8080/order/list/ING
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTQwMjksImV4cCI6MTY4MzI1NzYyOX0.-PimZzkiOj-ZU3eA-qgN6v_ONtePunnqmJesvLM7u34EIK7Ok11S2iAh90RFq4ciY4PREoqUs3dcRfSBouzLcw
+
+### store order list
+GET http://localhost:8080/order/list-store?storeName=스타벅스 의정부공원점&startDate=2023-01-01&endDate=2023-01-31
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTQwMjksImV4cCI6MTY4MzI1NzYyOX0.-PimZzkiOj-ZU3eA-qgN6v_ONtePunnqmJesvLM7u34EIK7Ok11S2iAh90RFq4ciY4PREoqUs3dcRfSBouzLcw
+
+### each store total price
+GET http://localhost:8080/order/list-each?startDate=2023-05-01&endDate=2023-05-31
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTQwMjksImV4cCI6MTY4MzI1NzYyOX0.-PimZzkiOj-ZU3eA-qgN6v_ONtePunnqmJesvLM7u34EIK7Ok11S2iAh90RFq4ciY4PREoqUs3dcRfSBouzLcw
