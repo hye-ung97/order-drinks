@@ -54,9 +54,8 @@ public class OrderService {
         var menu = menuRepository.findByMenuName(order.getItem())
                 .orElseThrow(() -> new CustomException(NOT_EXIST_MENU));
 
-        if(!storeRepository.existsByStoreName(order.getStoreName())){
-            throw new CustomException(NOT_FOUND_STORE_DATA);
-        }
+        StoreEntity store = getStore(order.getStoreName());
+
         if(menu.getQuantity() < order.getQuantity()){
             outOfStockAlert(menu);
             throw new CustomException(OUT_OF_STOCK);
@@ -93,8 +92,6 @@ public class OrderService {
             user.getCoupon().setCount(user.getCoupon().getCount() - 1);
         }
 
-        StoreEntity store = getStore(order.getStoreName());
-
         var result = listOrderRepository.save(order.toEntity(price, user, store));
         List<ListOrderEntity> listOrder = user.getListOrder();
         listOrder.add(result);
@@ -110,7 +107,8 @@ public class OrderService {
     public void outOfStockAlert(MenuEntity menu){
         List<MemberEntity> list = memberRepository.findAll();
         var result = list.stream().filter(n -> n.getRoles().contains("ROLE_ADMIN")).toList();
-        result.stream().map(MemberEntity::getUsername).forEach(receiver -> notificationService.send(receiver, menu.getMenuName() + " 재고가 부족합니다.", menu.getQuantity()));
+        result.stream().map(MemberEntity::getUsername).forEach(receiver ->
+                notificationService.send(receiver, menu.getMenuName() + " 재고가 부족합니다.", menu.getQuantity()));
     }
 
     public Page<ListOrderDto> checkStatus(OrderStatus status, Pageable pageable) {
@@ -167,12 +165,11 @@ public class OrderService {
 
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), list.size());
-        Page<ListOrderDto> page = new PageImpl<>(list.subList(start, end), pageable, list.size());
 
-        StoreOrderBillDto storeOrderBillDto = new StoreOrderBillDto();
-        storeOrderBillDto.setSum(getTotalPrice(page));
-        storeOrderBillDto.setOrderList(page);
-        return storeOrderBillDto;
+        return new StoreOrderBillDto().builder()
+                .sum(getTotalPrice(list))
+                .orderList(new PageImpl<>(list.subList(start, end), pageable, list.size()))
+                .build();
     }
 
     public Page<StoreGroup> getEachStoreSalesPrice(LocalDate startDate, LocalDate endDate, Pageable pageable){
@@ -182,14 +179,14 @@ public class OrderService {
         for(StoreEntity store : stores){
             storeGroupList.add(StoreGroup.builder()
                             .storeName(store.getStoreName())
-                            .totalPrice(getTotalPrice(new PageImpl<>(getFilterList(startDate, endDate, store))))
+                            .totalPrice(getTotalPrice(getFilterList(startDate, endDate, store)))
                     .build());
         }
 
         return new PageImpl<>(storeGroupList);
     }
 
-    private static long getTotalPrice(Page<ListOrderDto> page) {
+    private static long getTotalPrice(List<ListOrderDto> page) {
         return page.stream().mapToLong(ListOrderDto::getPrice).sum();
     }
 
