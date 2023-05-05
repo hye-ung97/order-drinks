@@ -1,0 +1,27 @@
+### menu register
+POST http://localhost:8080/menu/register
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTQwMjksImV4cCI6MTY4MzI1NzYyOX0.-PimZzkiOj-ZU3eA-qgN6v_ONtePunnqmJesvLM7u34EIK7Ok11S2iAh90RFq4ciY4PREoqUs3dcRfSBouzLcw
+
+{
+  "menuName": "라떼",
+  "price": 4500
+}
+
+### menu list
+GET http://localhost:8080/menu/list
+
+### menu inventory manage
+PUT http://localhost:8080/menu/inventory
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTQwMjksImV4cCI6MTY4MzI1NzYyOX0.-PimZzkiOj-ZU3eA-qgN6v_ONtePunnqmJesvLM7u34EIK7Ok11S2iAh90RFq4ciY4PREoqUs3dcRfSBouzLcw
+
+{
+  "menuName": "라떼",
+  "quantity": 100
+}
+
+### menu inventory list
+GET http://localhost:8080/menu/inventory
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJoeXN1bmc3MTRAbmF2ZXIuY29tIiwicm9sZXMiOlsiUk9MRV9VU0VSIiwiUk9MRV9BRE1JTiJdLCJpYXQiOjE2ODMyNTQwMjksImV4cCI6MTY4MzI1NzYyOX0.-PimZzkiOj-ZU3eA-qgN6v_ONtePunnqmJesvLM7u34EIK7Ok11S2iAh90RFq4ciY4PREoqUs3dcRfSBouzLcw
