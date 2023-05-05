@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -45,9 +46,8 @@ public class OrderController {
     })
     @Parameter(name = "address", description = "현재 주소 입력", example = "서울시 강남구 테헤란로 231")
     @GetMapping("/find-store")
-        public ResponseEntity<?> findLocation(@RequestParam("address") String address) {
-        List<StoreData> storeData = googleMapService.findStoreFromApi(address);
-        return ResponseEntity.ok(storeData);
+        public ResponseEntity<List<StoreData>> findLocation(@RequestParam("address") String address) {
+        return ResponseEntity.ok(googleMapService.findStoreFromApi(address));
     }
 
     @Operation(summary = "음료 주문", description = "음료 주문")
@@ -67,9 +67,8 @@ public class OrderController {
 
     })
     @PostMapping()
-    public ResponseEntity<?> order(@RequestBody Order order, @AuthenticationPrincipal UserDetails user){
-        var result = orderService.orderReceipt(order, user.getUsername());
-        return ResponseEntity.ok(result);
+    public ResponseEntity<OrderBillDto> order(@RequestBody Order order, @AuthenticationPrincipal UserDetails user){
+        return ResponseEntity.ok(orderService.orderReceipt(order, user.getUsername()));
     }
 
     @Operation(summary = "주문 상태별 리스트", description = "주문 상태별(ING / COMPLETE) 리스트")
@@ -83,9 +82,8 @@ public class OrderController {
     @Parameter(name = "status", description = "주문상태")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list/{status}")
-    public ResponseEntity<?> orderStatus(@PathVariable OrderStatus status, Pageable pageable){
-        var result = orderService.checkStatus(status, pageable);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<Page<ListOrderDto>> orderStatus(@PathVariable OrderStatus status, Pageable pageable){
+        return ResponseEntity.ok(orderService.checkStatus(status, pageable));
     }
 
     @Operation(summary = "음료 상태 변경", description = "입력된 주문 번호를 통하여 음료 상태 변경 + 주문자에게 주문 완료 알림")
@@ -102,9 +100,9 @@ public class OrderController {
     @Parameter(name = "orderNo", description = "주문 번호", example = "1")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/status-change") //음료 상태 변경
-    public ResponseEntity<?> orderStatusChange(@RequestParam int orderNo){
-        var result = orderService.changeOrderStatus(orderNo);
-        notificationService.send(result.getUserName().getUsername(), "Your drink is ready!! Pick up please :)", orderNo);
+    public ResponseEntity<ListOrderDto> orderStatusChange(@RequestParam int orderNo){
+        ListOrderDto result = orderService.changeOrderStatus(orderNo);
+        notificationService.send(result.getUserName(), "Your drink is ready!! Pick up please :)", orderNo);
         return ResponseEntity.ok(result);
     }
 
@@ -122,12 +120,11 @@ public class OrderController {
     })
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list")
-    public ResponseEntity<?> orderListByTerm(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+    public ResponseEntity<Page<ListOrderDto>> orderListByTerm(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                                              Pageable pageable){
 
-        var result = orderService.getOrderList(startDate, endDate, pageable);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(orderService.getOrderList(startDate, endDate, pageable));
     }
 
     @Operation(summary = "특정 지점의 기간별 주문 리스트 보기", description = "특정 지점의 기간별 주문 리스트 및 매출액 보기")
@@ -145,12 +142,14 @@ public class OrderController {
     })
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list-store") //지점 주문 리스트 보기(기간별)
-    public ResponseEntity<?> orderListByStore(@RequestParam String storeName,
-                                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-                                              Pageable pageable){
-        var result = orderService.getOrderListByStoreName(storeName, startDate, endDate, pageable);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<StoreOrderBillDto> orderListByStore(
+            @RequestParam String storeName,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Pageable pageable){
+
+        return ResponseEntity.ok(orderService.getOrderListByStoreName(
+                storeName, startDate, endDate, pageable));
     }
 
     @Operation(summary = "각각의 지점별 판매 금액 보기(기간별)", description = "각각의 지점별 판매 금액 보기(기간별)")
@@ -167,11 +166,12 @@ public class OrderController {
     })
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list-each")
-    public ResponseEntity<?> eachStorePriceList(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-                                                Pageable pageable){
-        var result = orderService.getEachStoreSalesPrice(startDate, endDate, pageable);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<Page<StoreGroup>> eachStorePriceList(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Pageable pageable){
+
+        return ResponseEntity.ok(orderService.getEachStoreSalesPrice(startDate, endDate, pageable));
     }
 
 }
