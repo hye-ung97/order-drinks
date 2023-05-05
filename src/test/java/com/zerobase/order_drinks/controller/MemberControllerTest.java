@@ -35,6 +35,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -70,7 +71,7 @@ class MemberControllerTest {
         //when
         //then
         mockMvc.perform(get("/member/withdraw").with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON_UTF8)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
                 .andExpect(jsonPath("$.code").value("NOT_EXIST_USER"))
                 .andExpect(status().isOk());
@@ -94,7 +95,7 @@ class MemberControllerTest {
         //when
         //then
         mockMvc.perform(get("/member/withdraw").with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON_UTF8)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
                 .andExpect(jsonPath("$.id").value("user"))
                 .andExpect(jsonPath("$.result").value("withdraw success!"))
@@ -150,7 +151,7 @@ class MemberControllerTest {
                 .willThrow(new CustomException(NOT_EXIST_USER));
         //when
         //then
-        mockMvc.perform(get("/member/charge").with(csrf())
+        mockMvc.perform(put("/member/charge").with(csrf())
                         .param("price", "5000"))
                 .andExpect(jsonPath("$.code").value("NOT_EXIST_USER"))
                 .andExpect(status().isOk());
@@ -170,7 +171,7 @@ class MemberControllerTest {
                 .willReturn(wallet.getCard());
         //when
         //then
-        mockMvc.perform(get("/member/charge").with(csrf())
+        mockMvc.perform(put("/member/charge").with(csrf())
                         .param("price", "5000"))
                 .andExpect(jsonPath("$.price").value(5000))
                 .andExpect(status().isOk());
@@ -186,7 +187,7 @@ class MemberControllerTest {
 
         //when
         //then
-        mockMvc.perform(get("/member/myOrder").with(csrf()))
+        mockMvc.perform(get("/member/my-order").with(csrf()))
                 .andExpect(jsonPath("$.code").value("NOT_EXIST_ORDER_LIST"))
                 .andExpect(status().isOk());
     }
@@ -214,7 +215,7 @@ class MemberControllerTest {
         given(orderService.getUserOrderList(anyString(), any())).willReturn(page);
         //when
         //then
-        mockMvc.perform(get("/member/myOrder").with(csrf()))
+        mockMvc.perform(get("/member/my-order").with(csrf()))
                 .andExpect(jsonPath("$.content[0].totalPrice").value(4100))
                 .andExpect(status().isOk());
 
