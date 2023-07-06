@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/member")
+@RequestMapping("/members")
 @RequiredArgsConstructor
 public class MemberController {
 
@@ -45,7 +45,7 @@ public class MemberController {
                     description = "해당 사용자가 없습니다.",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    @GetMapping("/wallet")
+    @GetMapping("/wallets")
     public ResponseEntity<Wallet> getWallet(@AuthenticationPrincipal UserDetails user){
         return ResponseEntity.ok(memberService.getWallet(user.getUsername()));
     }
@@ -59,7 +59,7 @@ public class MemberController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @Parameter(name = "price", description = "충전 금액", example = "1000")
-    @PutMapping("/charge")
+    @PutMapping("/card")
     public ResponseEntity<Wallet.Card> charge(@RequestParam("price") int price, @AuthenticationPrincipal UserDetails user){
         return ResponseEntity.ok(memberService.cardCharge(price, user.getUsername()));
     }
@@ -72,7 +72,7 @@ public class MemberController {
                     description = "주문 리스트가 없습니다.",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    @GetMapping("/my-order")
+    @GetMapping("/order-list")
     public ResponseEntity<Page<OrderBillDto>> getUserOrder(@AuthenticationPrincipal UserDetails user, Pageable pageable){
         return ResponseEntity.ok(orderService.getUserOrderList(user.getUsername(), pageable));
     }

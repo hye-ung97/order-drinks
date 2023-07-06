@@ -33,8 +33,8 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = CustomException.class)))
     })
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody Auth.SignUp request){
-        var result = this.memberService.register(request);
+    public ResponseEntity<Auth.SignUp> signup(@RequestBody Auth.SignUp request){
+        memberService.register(request);
         log.info("user register -> " + request.getUsername());
 
         return ResponseEntity.ok(request);

@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/menu")
+@RequestMapping("/menus")
 public class MenuController {
 
     private final MenuService menuService;
@@ -34,7 +34,7 @@ public class MenuController {
                     description = "이미 존재하는 메뉴입니다.",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    @PostMapping("/register")
+    @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Menu> menuRegister(@RequestBody Menu request){
         menuService.menuRegister(request);
@@ -51,7 +51,7 @@ public class MenuController {
                     description = "메뉴 리스트가 없습니다.",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    @GetMapping("/list")
+    @GetMapping("/lists")
     public ResponseEntity<Page<Menu>> menuList(final Pageable pageable){
         return ResponseEntity.ok(menuService.menuList(pageable));
     }

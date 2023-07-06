@@ -25,29 +25,25 @@ public class MenuService {
 
     @Transactional
     public MenuEntity menuRegister(Menu menu){
-        boolean exists = this.menuRepository.existsByMenuName(menu.getMenuName());
+        boolean exists = menuRepository.existsByMenuName(menu.getMenuName());
         if(exists){
             throw new CustomException(EXIST_MENU);
         }
 
-        var result = this.menuRepository.save(menu.toEntity());
-
-        return result;
+        return menuRepository.save(menu.toEntity());
     }
 
     public Page<Menu> menuList(Pageable pageable) {
-        Page<MenuEntity> menuEntityPage = this.menuRepository.findAll(pageable);
+        Page<MenuEntity> menuEntityPage = menuRepository.findAll(pageable);
         if(menuEntityPage.isEmpty()){
             throw new CustomException(NOT_EXIST_MENU_LIST);
         }
 
-        Page<Menu> menuPage = menuEntityPage.map(m -> new Menu().menuDto(m.getMenuName(), m.getPrice()));
-
-        return menuPage;
+        return menuEntityPage.map(m -> new Menu().menuDto(m.getMenuName(), m.getPrice()));
     }
 
     public MenuInventory setInventory(MenuInventory menuInventory) {
-        var result = menuRepository.findByMenuName(menuInventory.getMenuName())
+        MenuEntity result = menuRepository.findByMenuName(menuInventory.getMenuName())
                 .orElseThrow(() -> new CustomException(NOT_EXIST_MENU));
 
         int quantity = result.getQuantity() + menuInventory.getQuantity();
@@ -60,14 +56,14 @@ public class MenuService {
     }
 
     public Page<MenuInventory> getInventory(Pageable pageable) {
-        var result = menuRepository.findAll(pageable);
+        Page<MenuEntity> result = menuRepository.findAll(pageable);
         if(result.isEmpty()){
             throw new CustomException(NOT_EXIST_MENU_LIST);
         }
-        Page<MenuInventory> inventories = result.map(m -> MenuInventory.builder()
+
+        return result.map(m -> MenuInventory.builder()
                 .menuName(m.getMenuName())
                 .quantity(m.getQuantity())
                 .build());
-        return inventories;
     }
 }
