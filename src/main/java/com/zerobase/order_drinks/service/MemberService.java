@@ -44,12 +44,12 @@ public class MemberService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return this.memberRepository.findByUsername(username)
+        return memberRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("couldn`t find user -> " + username));
     }
 
     public MemberEntity register(Auth.SignUp member){
-        boolean exists = this.memberRepository.existsByUsername(member.getUsername());
+        boolean exists = memberRepository.existsByUsername(member.getUsername());
         if(exists){
             throw new CustomException(ALREADY_EXIST_USER);
         }
@@ -59,7 +59,7 @@ public class MemberService implements UserDetailsService {
             throw new CustomException(NO_EMAIL_PATTERN);
         }
 
-        member.setPassword(this.passwordEncoder.encode(member.getPassword()));
+        member.setPassword(passwordEncoder.encode(member.getPassword()));
 
         Wallet.Card card = new Wallet.Card();
         card.setChargedDate(LocalDateTime.now());
@@ -75,7 +75,7 @@ public class MemberService implements UserDetailsService {
         pointRepository.save(point);
 
         String uuid = UUID.randomUUID().toString();
-        var result = this.memberRepository.save(member.toEntity(uuid, card, coupon, point));
+        MemberEntity result = this.memberRepository.save(member.toEntity(uuid, card, coupon, point));
 
         String email = member.getUsername();
         mailComponent.sendMail(email, uuid);
@@ -83,8 +83,7 @@ public class MemberService implements UserDetailsService {
         return result;
     }
 
-    private final static boolean isValidEmail(String email) {
-        boolean err = false;
+    private static boolean isValidEmail(String email) {
         String regex = "^[_a-z0-9-]+(.[_a-z0-9-]+)*@(?:\\w+\\.)+\\w+$";
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(email);
@@ -92,11 +91,10 @@ public class MemberService implements UserDetailsService {
     }
 
     public MemberEntity authenticate(Auth.SignIn member){
-        log.info("1");
-        var user = this.memberRepository.findByUsername(member.getUsername())
+        MemberEntity user = this.memberRepository.findByUsername(member.getUsername())
                 .orElseThrow(() -> new CustomException(NOT_EXIST_USER));
-        log.info("2");
-        if(!this.passwordEncoder.matches(member.getPassword(), user.getPassword())){
+
+        if(!passwordEncoder.matches(member.getPassword(), user.getPassword())){
             throw new CustomException(PASSWORD_NOT_MATCH);
         }
 
@@ -114,7 +112,7 @@ public class MemberService implements UserDetailsService {
     public Member emailAuth(String uuid){
         Optional<MemberEntity> optionalMember = memberRepository.findByEmailAuthKey(uuid);
 
-        if(!optionalMember.isPresent()){
+        if(optionalMember.isEmpty()){
             throw new CustomException(NOT_EXIST_USER);
         }
 
@@ -142,7 +140,7 @@ public class MemberService implements UserDetailsService {
     }
 
     public Wallet.Card cardCharge(int price, String userName){
-        var user = this.memberRepository.findByUsername(userName)
+        MemberEntity user = this.memberRepository.findByUsername(userName)
                 .orElseThrow(() -> new CustomException(NOT_EXIST_USER));
 
         int chargedPrice = user.getCard().getPrice() + price;
@@ -155,7 +153,7 @@ public class MemberService implements UserDetailsService {
     }
 
     public Wallet getWallet(String userName){
-        var user = this.memberRepository.findByUsername(userName)
+        MemberEntity user = memberRepository.findByUsername(userName)
                 .orElseThrow(() -> new CustomException(NOT_EXIST_USER));
 
         Wallet wallet = new Wallet();
